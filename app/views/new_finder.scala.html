@@ -1,0 +1,20 @@
+@(schemeId: String, finderForm: Form[Finder])
+
+@import helper._
+
+@main("New Finder - TopicHub") {
+
+     <h2>Add a new finder</h2> 
+    @form(routes.Application.createFinder(schemeId)) {
+        
+        @select(finderForm("scheme_id"), options(Scheme.mapView)) 
+        @textarea(finderForm("description")) 
+        @inputText(finderForm("cardinality")) 
+        @inputText(finderForm("format")) 
+        @inputText(finderForm("idKey")) 
+        @inputText(finderForm("idLabel")) 
+        @inputText(finderForm("author")) 
+        
+        <input type="submit" value="Create">      
+    }
+}

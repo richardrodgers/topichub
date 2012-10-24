@@ -1,0 +1,12 @@
+@(subs: List[Subscriber])
+
+@main("Subscribers -  TopicHub") {
+
+     <h2>Number of subscribers: @subs.size</h2>
+     <ul>
+       @subs.map { sub =>
+         <li><a href="@routes.Application.subscriber(sub.id)">@sub.userId</a>
+         </li>
+       }
+     </ul>
+}

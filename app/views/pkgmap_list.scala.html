@@ -1,0 +1,12 @@
+@(pkgmaps: List[PackageMap])
+
+@main("Package Maps - TopicHub") {
+
+     <h2>Number of package maps: @pkgmaps.size</h2>
+     <ul>
+       @pkgmaps.map { pmap =>
+         <li>@pmap.pkgmapId <a href="@routes.Application.pkgmap(pmap.id)">@pmap.description</a></li>
+       }
+     </ul>
+     <p><a class="btn btn-primary btn-large" href="@routes.Application.newPkgmap">New Package Map</a></p>
+}

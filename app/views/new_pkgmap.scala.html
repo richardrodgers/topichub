@@ -1,0 +1,16 @@
+@(pkgmapForm: Form[PackageMap])
+
+@import helper._
+
+@main("Package Maps - TopicHub") {
+
+     <h2>Add a new package map</h2> 
+    @form(routes.Application.createPkgmap) {
+        
+        @inputText(pkgmapForm("pkgmapId"))
+        @inputText(pkgmapForm("description")) 
+        @inputText(pkgmapForm("swordurl")) 
+        
+        <input type="submit" value="Create">      
+    }
+}

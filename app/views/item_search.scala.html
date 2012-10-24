@@ -1,0 +1,13 @@
+@(items: Seq[Option[Item]], page: Int)
+
+@main("Items -  TopicHub") {
+
+     <h2>Number of articles: @items.size</h2>
+     <i class="icon-search"></i>
+     <ul>
+       @items.map { item =>
+         <li><a href="@routes.Application.item(item.get.id)">@item.get.metadataValue("title")</a>
+         </li>
+       }
+     </ul>
+}

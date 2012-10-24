@@ -1,0 +1,17 @@
+@(subscriber_id: Long, targetForm: Form[Target])
+
+@import helper._
+
+@main("New Destination - TopicHub") {
+
+    <h2>Add a new destination</h2> 
+    @form(routes.Application.createTarget(subscriber_id)) {
+        
+        @inputText(targetForm("description"))
+        @inputText(targetForm("userId"))
+        @inputText(targetForm("password")) 
+        @inputText(targetForm("depositUrl")) 
+        
+        <input type="submit" value="Create">      
+    }
+}

@@ -1,0 +1,17 @@
+@(subForm: Form[Subscriber])
+
+@import helper._
+
+@main("New Subscriber - TopicHub") {
+
+     <h2>Add a new subscriber</h2> 
+    @form(routes.Application.createSubscriber) {
+        
+        @inputText(subForm("userId"))
+        @inputText(subForm("password")) 
+        @inputText(subForm("swordService")) 
+        @inputText(subForm("contact")) 
+        
+        <input type="submit" value="Create">      
+    }
+}

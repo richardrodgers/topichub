@@ -1,0 +1,14 @@
+@(pubs: List[Publisher])
+
+@main("Publishers -  TopicHub") {
+
+     <h2>Number of publishers: @pubs.size</h2>
+     <ul>
+       @pubs.map { pub =>
+         <li>@pub.pubId <a href="@routes.Application.publisher(pub.id)">@pub.name</a>
+            <p>@pub.description</p>
+         </li>
+       }
+     </ul>
+     <p><a class="btn btn-primary btn-large" href="@routes.Application.newPublisher">New Publisher</a></p>
+}

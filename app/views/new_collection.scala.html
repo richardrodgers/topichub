@@ -1,0 +1,17 @@
+@(pub: Publisher, collForm: Form[Collection])
+
+@import helper._
+
+@main("New Collection - TopicHub") {
+
+     <h2>Add a new collection</h2> 
+    @form(routes.Application.createCollection(pub.id)) {
+        
+        @select(collForm("ctype_id"), options(Ctype.mapView))
+        @select(collForm("pkgmap_id"), options(PackageMap.mapView))
+        @textarea(collForm("description")) 
+        @inputText(collForm("policy"))
+        
+        <input type="submit" value="Create">      
+    }
+}

@@ -1,0 +1,19 @@
+@(pub: Publisher, pubForm: Form[Publisher])
+
+@import helper._
+
+@main("New Publisher - TopicHub") {
+
+     <h2>Add a new publisher</h2> 
+    @form(routes.Application.createPublisher) {
+        
+        @inputText(pubForm("pubId"))
+        @inputText(pubForm("name")) 
+        @textarea(pubForm("description")) 
+        @inputText(pubForm("role"))
+        @inputText(pubForm("home"))
+        @inputText(pubForm("logo"))
+        
+        <input type="submit" value="Create">      
+    }
+}

@@ -1,0 +1,23 @@
+@(pkgmap: PackageMap, pmform: Form[(Long, String, String, Long)])
+
+@import helper._
+
+@main("Package Map - TopicHub") {
+
+     <h2>Package Map: @pkgmap.pkgmapId</h2>
+
+     <h3>Mappings</h3>
+     <ul>
+        @pkgmap.mappings.map { scheme =>
+            <li><a href="@routes.Application.scheme(scheme.id)">@scheme.schemeId</a>: @scheme.description</li>
+        }
+     </ul>
+    
+     <h4>Add a new mapping</h4> 
+      @form(routes.Application.newPkgmapMapping(pkgmap.id)) { 
+        @select(pmform("scheme_id"), options(Scheme.mapView))  
+        @inputText(pmform("source")) 
+        @inputText(pmform("format")) 
+        <input type="submit" value="Create">      
+      }
+}

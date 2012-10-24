@@ -1,0 +1,91 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# Routes in sections labeled 'pages' return HTML, those labeled 'services' return XML, JSON
+# ~~~~
+
+# Home page
+GET     /                           controllers.Application.index
+
+# Publisher pages
+GET     /publishers                 controllers.Application.publishers
+GET     /publisher/:id              controllers.Application.publisher(id: Long)
+GET     /publishers/create          controllers.Application.newPublisher
+GET     /publisher/:id/create       controllers.Application.newCollection(id: Long)
+POST    /publishers                 controllers.Application.createPublisher
+POST    /publisher/:id              controllers.Application.createCollection(id: Long)
+
+# Scheme pages
+GET     /schemes                    controllers.Application.schemes
+GET     /scheme/:id                 controllers.Application.scheme(id: Long)
+GET     /schemes/create             controllers.Application.newScheme
+POST    /schemes                    controllers.Application.createScheme
+
+# Finder pages
+GET     /scheme/:sid/finders        controllers.Application.finders(sid: String)
+GET     /scheme/:sid/create         controllers.Application.newFinder(sid: String)
+GET     /testfinder                 controllers.Application.testFinder
+POST    /testfinder                 controllers.Application.runTestFinder
+POST    /scheme/:sid                controllers.Application.createFinder(sid: String)
+GET     /scheme/:sid/finder/:id/delete  controllers.Application.deleteFinder(sid: String, id: Long)
+
+# Ctype pages
+GET     /ctypes                     controllers.Application.ctypes
+GET     /ctype/:id                  controllers.Application.ctype(id: Long)
+GET     /ctypes/create              controllers.Application.newCtype
+POST    /ctypes                     controllers.Application.createCtype
+POST    /ctypem/:id                 controllers.Application.newCtypeMD(id: Long)
+POST    /ctypei/:id                 controllers.Application.newCtypeIndex(id: Long)
+POST    /ctypet/:id                 controllers.Application.newCtypeTopic(id: Long)
+
+# PackageMap pages
+GET     /pkgmaps                    controllers.Application.pkgmaps
+GET     /pkgmap/:id                 controllers.Application.pkgmap(id: Long)
+GET     /pkgmaps/create             controllers.Application.newPkgmap
+POST    /pkgmaps                    controllers.Application.createPkgmap
+POST    /pkgmap/:id                 controllers.Application.newPkgmapMapping(id: Long)
+
+# Item pages
+GET     /items                       controllers.Application.items
+#GET     /items/search               controllers.Application.itemSearch
+#GET     /items/browse               controllers.Application.itemBrowse
+GET     /item/:id                    controllers.Application.item(id: Long)
+#GET     /item/file/:id              controllers.Application.itemFile
+#POST    /item/order/{id}            controllers.Application.itemOrder
+
+# Topic pages
+GET     /topics                      controllers.Application.topics
+#GET     /topics/search               controllers.Application.topicSearch
+GET     /topics/:sid/browse          controllers.Application.topicBrowse(sid: Long)
+GET     /topic/:id                   controllers.Application.topic(id: Long)
+#POST    /topic/{scheme}/{topicId}    controllers.Application.subscribe
+
+# Subscriber pages
+GET     /subscribers                controllers.Application.subscribers
+GET     /subscribers/create         controllers.Application.newSubscriber
+GET     /subscriber/:id             controllers.Application.subscriber(id: Long)
+GET     /target/:id                 controllers.Application.target(id: Long)
+GET     /subscription/:id           controllers.Application.subscription(id: Long)
+GET     /targets/:sid/create        controllers.Application.newTarget(sid: Long)
+POST    /subscribers                controllers.Application.createSubscriber
+POST    /subscriber/:sid/targets    controllers.Application.createTarget(sid: Long)
+
+# Search pages
+GET     /search                     controllers.Application.search
+
+# SWORD services
+GET     /sword/servicedocument      controllers.SwordServer.serviceDocument
+POST    /sword/collection/:id       controllers.SwordServer.acceptDeposit(id: Long)
+
+# Atom Feed services
+GET     /feed/:scheme/:topicId      controllers.Feed.topicFeed(scheme: String, topicId: String)
+
+# OAI-PMH services
+GET     /oai                        controllers.OAI.provide
+POST    /oai                        controllers.OAI.provide
+
+# OAI-ResourceSync services (TODO)
+
+# Interhub services (TODO)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)

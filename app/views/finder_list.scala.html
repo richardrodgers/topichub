@@ -1,0 +1,11 @@
+@(finders: List[Finder])
+
+@main("Finders - TopicHub") {
+
+     <h2>Number of finders: @finders.size</h2>
+     <ul>
+       @finders.map { finder =>
+         <li>@finder.description</li>
+       }
+     </ul>
+}

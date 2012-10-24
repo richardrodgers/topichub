@@ -1,0 +1,60 @@
+@(title: String)(content: Html)
+
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>@title</title>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/thfavicon.png")">
+        <script src="@routes.Assets.at("javascripts/jquery-1.7.1.min.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/bootstrap.js")" type="text/javascript"></script>
+        <style type="text/css">
+          body {
+            padding-top: 60px;
+            padding-bottom: 40px;
+          }
+        </style>
+    </head>
+    <body>
+      <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+          <div class="container">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="#">TopicHub</a>
+            <div class="nav-collapse">
+              <ul class="nav">
+                <li class="active"><a href="@routes.Application.index">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="@routes.Application.topics">Topics</a></li>
+                <li><a href="@routes.Application.items">Articles</a></li>
+                <li><a href="@routes.Application.publishers">Publishers</a></li>
+                <li><a href="@routes.Application.subscribers">Subscribers</a></li>
+                <li><form class="form-search" action="@routes.Application.search">
+                	<div class="input-append">
+                		<input type="radio" name="etype" value="item"> Articles</input>
+                		<input type="radio" name="etype" value="topic"> Topics</input>
+                	  <input type="text" name="query" class="span2 search-query" placeholder="search...">
+                	  <button type="submit" class="btn"><i class="icon-envelope">Go</i></button>
+                  </div></form>
+                </li>
+              </ul>
+            </div><!--/.nav-collapse -->
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        @content
+        <hr>
+        <footer>
+          <p>Copyright &copy; MIT Libraries 2012. All rights reserved.</p>
+      </footer>
+      </div>
+    </body>
+</html>

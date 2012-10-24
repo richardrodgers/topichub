@@ -1,0 +1,25 @@
+@(finderTestForm: Form[(Long, String, String, String)], results: Seq[String])
+
+@import helper._
+
+@main("Test Finder - TopicHub") {
+
+     <h2>Test Finder logic</h2> 
+    @form(routes.Application.runTestFinder) {
+        
+        @inputText(finderTestForm("itemId")) 
+        @inputText(finderTestForm("source")) 
+        @inputText(finderTestForm("idKey")) 
+        @inputText(finderTestForm("idLabel")) 
+        
+        <input type="submit" value="Test">      
+    }
+
+    <h2>Results</h2>
+    <ul>
+    	@results.map { result =>
+    	<li>@result</li>
+     }
+    </ul>
+
+}

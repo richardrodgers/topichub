@@ -1,0 +1,48 @@
+@(ctype: Ctype, scForm: Form[(Long, Long)])
+
+@import helper._
+
+@main("Content Types - TopicHub") {
+
+     <h2>Content Type: @ctype.ctypeId</h2>
+
+     <h3>Metadata Schema</h3>
+     <ul>
+        @ctype.schemes("meta").map { scheme =>
+            <li><a href="@routes.Application.scheme(scheme.id)">@scheme.schemeId</a>: @scheme.description</li>
+        }
+     </ul>
+    
+     <h4>Add a new metadata scheme</h4> 
+      @form(routes.Application.newCtypeMD(ctype.id)) {
+        @select(scForm("scheme_id"), options(Scheme.mapView))  
+        <input type="submit" value="Create">      
+      }
+
+     <h3>Index Schema</h3>
+     <ul>
+        @ctype.schemes("index").map { scheme =>
+            <li><a href="@routes.Application.scheme(scheme.id)">@scheme.schemeId</a>: @scheme.description</li>
+        }
+     </ul>
+    
+     <h4>Add a new index scheme</h4> 
+      @form(routes.Application.newCtypeIndex(ctype.id)) {   
+        @select(scForm("scheme_id"), options(Scheme.mapView))      
+        <input type="submit" value="Create">      
+      }
+
+     <h3>Topic Schema</h3>
+     <ul>
+     	@ctype.schemes("topic").map { scheme =>
+          <li><a href="@routes.Application.scheme(scheme.id)">@scheme.schemeId</a>: @scheme.description
+          <a href="@routes.Application.scheme(scheme.id)">remove</a>
+          </li>
+        }
+     </ul>
+     <h4>Add a new topic scheme</h4> 
+      @form(routes.Application.newCtypeTopic(ctype.id)) {   
+        @select(scForm("scheme_id"), options(Scheme.mapView))      
+        <input type="submit" value="Create">      
+      }
+}

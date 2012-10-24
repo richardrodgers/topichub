@@ -1,0 +1,24 @@
+@(schemes: List[Scheme])
+
+@main("Topics -  TopicHub") {
+  <div class="container-fluid">
+  	<div class="row-fluid">
+      <div class="span4">
+      	<div class="well sidebar-nav">
+      		<ul class="nav nav-list">
+      			<li class="nav-header">Schemes</li>
+      		  @schemes.map { scheme =>
+         			<li><a href="@routes.Application.topicBrowse(scheme.id)">@scheme.schemeId: @scheme.description</a> (@HubUtils.pluralize(scheme.topicCount.toInt, "topic"))</li>
+       			}
+      		</ul>
+      	</div>
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Understanding Topics</h2>
+          <p>Topics are at the heart of how TopicHub helps you discover content. Each topic is a simple term belonging to a common vocabulary or name-space, known as its scheme, that describes, characterizes or classifies the article. Topics help organize items into groups that are of interest to subscribers: all articles in a particular journal, everything written by a certain author, etc. Explore the topics within a scheme by clicking on one of the scheme browse links at the left, or search for topics above.
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,19 @@
+@(schemeForm: Form[Scheme])
+
+@import helper._
+
+@main("New Scheme - TopicHub") {
+
+     <h2>Add a new scheme</h2> 
+    @form(routes.Application.createScheme) {
+        
+        @inputText(schemeForm("schemeId"))
+        @inputText(schemeForm("gentype")) 
+        @inputText(schemeForm("category")) 
+        @textarea(schemeForm("description")) 
+        @inputText(schemeForm("home")) 
+        @inputText(schemeForm("logo")) 
+        
+        <input type="submit" value="Create">      
+    }
+}

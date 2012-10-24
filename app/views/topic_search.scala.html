@@ -1,0 +1,13 @@
+@(topics: Seq[Option[Topic]], page: Int)
+
+@main("Topics -  TopicHub") {
+
+     <h2>Number of topics: @topics.size</h2>
+     <i class="icon-search"></i>
+     <ul>
+       @topics.map { topic =>
+         <li><a href="@routes.Application.topic(topic.get.id)">@topic.get.title @topic.get.topicId</a>
+         </li>
+       }
+     </ul>
+}

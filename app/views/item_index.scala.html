@@ -1,0 +1,26 @@
+@(pubs: List[Publisher])
+
+@main("Items -  TopicHub") {
+  <div class="container-fluid">
+  	<div class="row-fluid">
+      <div class="span4">
+      	<div class="well sidebar-nav">
+      		<ul class="nav nav-list">
+      			<li class="nav-header">Collections</li>
+      		  @for(pub <- pubs) {
+              @for(coll <- pub.collections) { 
+         			  <li><a href="@routes.Application.topicBrowse(1L)">@coll.description</a> (@HubUtils.pluralize(coll.deposits, "article"))</li>
+       			  }
+            }
+      		</ul>
+      	</div>
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Understanding Items</h2>
+          <p>Items are packages containing content - like a PDF file - and descriptive information about that content. TopicHub can deliver these packages to your repository using subscriptions (the easiest way), or you can download them from the item page. Explore the items deposited by a given publisher by clicking on one of the collecton browse links at the left, or search directly above.
+        </div>
+      </div>
+    </div>
+  </div>
+}

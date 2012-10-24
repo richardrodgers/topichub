@@ -1,0 +1,13 @@
+@(scheme: Scheme)
+
+@main("Topic Browse -  TopicHub") {
+
+     <h2>Topic Browse by Scheme</h2>
+     <p>@scheme.category: @scheme.description</p>
+     <h3>Topics</h3>
+     <ul>
+       @Topic.withScheme(scheme.id).map { topic =>
+         <li><a href="@routes.Application.topic(topic.id)">@topic.topicId</a> @topic.title</li>
+       }
+     </ul>
+}

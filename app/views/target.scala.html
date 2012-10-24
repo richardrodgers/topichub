@@ -1,0 +1,14 @@
+@(target: Target)
+
+@main("Destination - TopicHub") {
+
+     <h2>Destination</h2>
+     <p>@target.description</p>
+
+     <h3>Subscriptions</h3>
+     <ul>
+     @target.subscriptions.map { sub =>
+			 <li><a href="@routes.Application.subscription(sub.id)">Topic: @sub.topic_id</a></li>
+     }
+     </ul>
+}

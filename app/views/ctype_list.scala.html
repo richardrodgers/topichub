@@ -1,0 +1,12 @@
+@(ctypes: List[Ctype])
+
+@main("Content Types - TopicHub") {
+
+     <h2>Number of content types: @ctypes.size</h2>
+     <ul>
+       @ctypes.map { ctype =>
+         <li>@ctype.ctypeId <a href="@routes.Application.ctype(ctype.id)">@ctype.description</a></li>
+       }
+     </ul>
+     <p><a class="btn btn-primary btn-large" href="@routes.Application.newCtype">New Content Type</a></p>
+}

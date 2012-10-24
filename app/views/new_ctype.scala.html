@@ -1,0 +1,16 @@
+@(ctypeForm: Form[Ctype])
+
+@import helper._
+
+@main("Content Types  - TopicHub") {
+
+     <h2>Add a new content type</h2> 
+    @form(routes.Application.createCtype) {
+        
+        @inputText(ctypeForm("ctypeId"))
+        @inputText(ctypeForm("description")) 
+        @inputText(ctypeForm("logo")) 
+        
+        <input type="submit" value="Create">      
+    }
+}

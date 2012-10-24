@@ -1,0 +1,12 @@
+@(schemes: List[Scheme])
+
+@main("Schemes - TopicHub") {
+
+     <h2>Number of schemes: @schemes.size</h2>
+     <ul>
+       @schemes.map { scheme =>
+         <li>@scheme.schemeId <a href="@routes.Application.scheme(scheme.id)">@scheme.description</a></li>
+       }
+     </ul>
+     <p><a class="btn btn-primary btn-large" href="@routes.Application.newScheme">New Scheme</a></p>
+}

@@ -1,0 +1,15 @@
+@(scheme: Scheme)
+
+@main("Scheme - TopicHub") {
+
+     <h2>Scheme: @scheme.schemeId</h2>
+     <p><a href="@scheme.home" target="_blank">@scheme.description</a></p>
+
+     <h3>Finders</h3>
+     <ul>
+     @Finder.findByScheme(scheme.id).map { finder =>
+       <li><p>@finder.description for: @finder.format</p><p><a href="@routes.Application.deleteFinder(scheme.schemeId, finder.id)">remove</a></p></li>
+     }
+     </ul>
+     <p><a class="btn btn-primary btn-large" href="@routes.Application.newFinder(scheme.schemeId)">New Finder</a></p>
+}

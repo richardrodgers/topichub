@@ -1,0 +1,41 @@
+@(message: String)
+
+@main("TopicHub") {
+    
+  <div class="hero-unit">
+    <h1>Welcome to TopicHub!</h1>
+    <p>TopicHub connects content providers and collectors. It provides numerous ways to help you discover and acquire content for your repository, from simple email notifications, to RSS feeds, to fully automated delivery directly into IRs. Getting content has never been easier.</p>
+    <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+  </div>
+  <div class="row">
+  	<div class="span4">
+  		<h2>For Publishers</h2>
+  		<p>TopicHub is a great way to (re)distribute your content without any hassle</p>
+  	</div>
+   	<div class="span4">
+  		<h2>For Repositories</h2>
+  		<p>TopicHub is by far the most frictionless content you will acquire</p>
+  	</div>
+  	<div class="span4">
+  		<h2>For Everybody</h2>
+  		<p>TopicHub allows to stay informed on publication trends</p>
+  	</div>
+  </div>
+  <div class="row">
+  	<div class="span4">
+  		<div class="well">
+  		  <h2>@Item.count Articles</h2>
+  	  </div>
+  	</div>
+  	<div class="span4">
+  		<div class="well">
+  		  <h2>@Topic.count Topics</h2>
+  	  </div>
+  	</div>
+  	<div class="span4">
+  		<div class="well">
+  		  <h2>@Subscriber.count Subscribers</h2>
+  		</div>
+  	</div>
+  </div>
+}
