@@ -9,7 +9,10 @@
        <p>@HubUtils.pluralize(topic.itemCount, "article")</p>
        <p>@HubUtils.pluralize(topic.subscriptionCount, "subscriber")</p>
        <p>Added @HubUtils.fmtDate(topic.created) @HubUtils.pluralize(topic.transfers, "transfer") - latest @HubUtils.fmtDate(topic.updated)</p>
-       <span><a class="btn btn-primary btn-large">Subscribe &raquo;</a><a class="btn btn-primary btn-large pull-right">Notify &raquo;</a></span>
+       <span>
+             <a href="@routes.Application.topicSubscribe(topic.id)" class="btn btn-primary btn-large">Subscribe &raquo;</a>
+             <a class="btn btn-primary btn-large pull-right">Notify &raquo;</a>
+       </span>
      </div>
 
      <h3>Recent Articles</h3>

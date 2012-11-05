@@ -2,17 +2,20 @@
 
 @main("Item - TopicHub") {
 
-		<div class="hero-unit">
+    <div class="hero-unit">
      <h2>@item.metadataValue("title")</h2>
      <p>@item.metadataValues("author").mkString("; ")</p>
      <p>@item.metadataValue("citation")</p>
      <p>@HubUtils.pluralize(item.transfers, "transfer") since @HubUtils.fmtDate(item.created). Most recent @HubUtils.fmtDate(item.updated)</p>
-     <p><a class="btn btn-primary btn-large">Gimme &raquo;</a></p>
+     <p>
+        <a href="@routes.Application.itemTransfer(item.id)" class="btn btn-primary btn-large">Deposit &raquo;</a>
+        <a href="@routes.Application.itemFile(item.id)" class="btn btn-primary btn-large pull-right">Download &raquo;</a>
+     </p>
     </div>
      <h3>Topics</h3>
      <ul>
-     	@item.topics.map { tp =>
-     		<li><a href="@routes.Application.topic(tp.id)">@tp.topicId</a>: @tp.title</li>
-     }
+       @item.topics.map { tp =>
+         <li><a href="@routes.Application.topic(tp.id)">@tp.topicId</a>: @tp.title</li>
+       }
      </ul>
 }

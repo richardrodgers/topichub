@@ -316,6 +316,8 @@ object Cataloger {
       })
       println("Found some topics")
     }
+    // finally, should this be delivered on behalf of subscriptions?
+    Conveyor.newItem(item)
     //item.changeState("cataloged")
   }
 

@@ -6,6 +6,8 @@ package controllers
 
 import java.util.{Date}
 
+import akka.actor.Props
+
 import play.api._
 import play.api.mvc._
 import play.api.data._
@@ -13,17 +15,20 @@ import play.api.data.Forms._
 import play.api.data.format.Formats._
 import play.api.libs.ws.WS
 import play.api.Play.current
+import play.api.libs.concurrent._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import play.api.libs.json._
 
 import models._
 import store._
-import workers.Cataloger
+import workers.{Cataloger, ConveyorWorker}
 
 object Application extends Controller {
 
   val indexSvc = Play.configuration.getString("hub.index.url").get
+
+  val conveyor = Akka.system.actorOf(Props[ConveyorWorker], name="conveyor")
   
   def index = Action {
     Ok(views.html.index("Your new application is ready."))
@@ -66,16 +71,40 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such item"))
   }
 
+  def itemBrowse(coll_id: Long) = Action {
+    Collection.findById(coll_id).map( c => 
+      Ok(views.html.item_browse(c))
+    ).getOrElse(NotFound("No such collection"))
+  }
+
   def itemFile(id: Long) = Action {
-      Item.findById(id).map( i => {
-        val itemPkg = Store.content(i)
-        SimpleResult(
-          header = ResponseHeader(200, Map(CONTENT_TYPE -> itemPkg.mimetype)),
-          body = Enumerator.fromStream(itemPkg.content)
-        )
-        //Ok(views.html.item(i))
-      }
+    Item.findById(id).map( i => {
+      val itemPkg = Store.content(i)
+      SimpleResult(
+        header = ResponseHeader(200, Map(CONTENT_TYPE -> itemPkg.mimetype)),
+        body = Enumerator.fromStream(itemPkg.content)
+      )
+    }
     ).getOrElse(NotFound("No such item"))  
+  }
+
+  def itemTransfer(id: Long) = Action { implicit request =>
+    Item.findById(id).map( i => {
+      val sub = Subscriber.findByContact(request.session.get("email").get).get
+      Ok(views.html.item_transfer(id, sub.targets))
+    }
+    ).getOrElse(NotFound("No such item"))
+  }
+
+  def transfer(id: Long) = Action { implicit request =>
+    Item.findById(id).map( i => {
+      val sub = Subscriber.findByContact(request.session.get("email").get).get
+      // create a transfer and pass to a conveyor
+      val targ_id = request.queryString.get("target").getOrElse(List("0L")).head.toLong
+      conveyor ! Transfer.make(targ_id, i.id, -1, Some("unknown"))
+      Ok(views.html.item_index(Publisher.all))
+    }
+    ).getOrElse(NotFound("No such item"))
   }
 
   def topics = Action {
@@ -92,6 +121,25 @@ object Application extends Controller {
     Scheme.findById(scheme_id).map( s => 
       Ok(views.html.topic_browse(s))
     ).getOrElse(NotFound("No such scheme"))
+  }
+
+  def topicSubscribe(id: Long) = Action { implicit request =>
+    Topic.findById(id).map( t => {
+      val sub = Subscriber.findByContact(request.session.get("email").get).get
+      Ok(views.html.topic_subscribe(id, sub.targets))
+    }
+    ).getOrElse(NotFound("No such topic"))
+  }
+
+  def subscribe(id: Long) = Action { implicit request =>
+    Topic.findById(id).map( t => {
+      val sub = Subscriber.findByContact(request.session.get("email").get).get
+      // create a subscription and pass to a conveyor
+      val targ_id = request.queryString.get("target").getOrElse(List("0L")).head.toLong
+      conveyor ! Subscription.make(sub.id, targ_id, id, "all")
+      Ok(views.html.item_index(Publisher.all))
+    }
+    ).getOrElse(NotFound("No such topic"))
   }
 
   val pubForm = Form(

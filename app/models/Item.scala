@@ -56,6 +56,14 @@ case class Item(id: Long, collection_id: Long, ctype_id: Long, itemId: String,
       rows().map(row => row[String]("mdvalue")).toList
     }
   }
+
+  def recordTransfer {
+    val newTrans = transfers + 1
+    DB.withConnection { implicit c =>
+      SQL("update item set transfers = {transfers} and updated = {updated} where id = {id} ")
+      .on('transfers -> newTrans, 'updated -> new Date, id -> id).executeUpdate()
+    }
+  }
 }
 
 object Item {
@@ -75,9 +83,9 @@ object Item {
 		}
   }
 
-  def all(): List[Item] = {
+  def all: List[Item] = {
       DB.withConnection { implicit c =>
-      SQL("select * from item").as(item *)
+        SQL("select * from item").as(item *)
     }
   }
 
@@ -107,7 +115,7 @@ object Item {
   }
 
   def findById(id: Long): Option[Item] = {
-   DB.withConnection { implicit c =>
+    DB.withConnection { implicit c =>
       SQL("select * from item where id = {id}").on('id -> id).as(item.singleOpt)
     }  
   }
@@ -122,6 +130,13 @@ object Item {
    DB.withConnection { implicit c =>
       SQL("select * from item where itemId = {itemId}").on('itemId -> itemId).as(item.singleOpt)
     }
+  }
+
+  def inCollection(coll_id: Long): List[Item] = {
+    DB.withConnection { implicit c =>
+      SQL("select * from item where collection_id = {id}").on('id -> coll_id).as(item *)
+    }  
+
   }
 
   def delete(id: Long) {

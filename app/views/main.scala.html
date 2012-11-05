@@ -5,6 +5,7 @@
 <html lang="en">
     <head>
         <title>@title</title>
+        <link rel="sword" href="@routes.SwordServer.serviceDocument">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/thfavicon.png")">
@@ -30,20 +31,19 @@
             <div class="nav-collapse">
               <ul class="nav">
                 <li class="active"><a href="@routes.Application.index">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#contact">Contact</a></li>
                 <li><a href="@routes.Application.topics">Topics</a></li>
-                <li><a href="@routes.Application.items">Articles</a></li>
+                <li><a href="@routes.Application.items">Items</a></li>
                 <li><a href="@routes.Application.publishers">Publishers</a></li>
                 <li><a href="@routes.Application.subscribers">Subscribers</a></li>
                 <li><form class="form-search" action="@routes.Application.search">
                 	<div class="input-append">
                 		<input type="radio" name="etype" value="item"> Articles</input>
-                		<input type="radio" name="etype" value="topic"> Topics</input>
+                		<input type="radio" name="etype" value="topic" checked> Topics</input>
                 	  <input type="text" name="query" class="span2 search-query" placeholder="search...">
                 	  <button type="submit" class="btn"><i class="icon-envelope">Go</i></button>
                   </div></form>
                 </li>
+                <li><a href="@routes.Security.login">Login</a></li>
               </ul>
             </div><!--/.nav-collapse -->
           </div>

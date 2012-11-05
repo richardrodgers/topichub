@@ -200,14 +200,14 @@ CREATE SEQUENCE transfer_id_seq;
 CREATE TABLE transfer (
   id integer NOT NULL DEFAULT nextval('transfer_id_seq'),
   target_id integer,
+  item_id integer,
   subscription_id integer,
-  itemId varchar(255) NOT NULL,
   target_addr varchar,
   created timestamp,
   state varchar(255),
   modified timestamp,
   FOREIGN KEY(target_id) REFERENCES target(id),
-  FOREIGN KEY(subscription_id) REFERENCES subscription(id),
+  FOREIGN KEY(item_id) REFERENCES item(id),
   PRIMARY KEY (id)
 );
 

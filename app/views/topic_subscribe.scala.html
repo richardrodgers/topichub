@@ -1,0 +1,14 @@
+@(id: Long, targets: List[Target])
+
+@import helper._
+
+@main("Topic Subscribe - TopicHub") {
+
+    <h2>Select a destination:</h2> 
+    <form action="@routes.Application.subscribe(id)">
+    @targets.map { target =>
+        <input type="radio" name="target" value="@target.id"/>&nbsp@target.description<br>
+    } 
+    <input type="submit" value="Subscribe">
+    </form> 
+}

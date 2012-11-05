@@ -48,12 +48,24 @@ object Subscription {
     }
   }
 
+  def findByTopicAndTarget(topic_id: Long, target_id: Long): List[Subscription] = {
+    DB.withConnection { implicit c =>
+      SQL("select * from subscription where topic_id = {topic_id} and target_id = {target_id}").on('topic_id -> topic_id, 'target_id -> target_id).as(subscription *)
+    }
+  }
+
   def create(subscriber_id: Long, target_id: Long, topic_id: Long, policy: String) {
 		DB.withConnection { implicit c =>
 			SQL("insert into subscription (subscriber_id, target_id, topic_id, policy, created, updated, transfers) values ({subscriber_id}, {target_id}, {topic_id}, {policy}, {created}, {updated}, {transfers})")
       .on('subscriber_id -> subscriber_id, 'target_id -> target_id, 'topic_id -> topic_id, 'policy -> policy, 'created -> new Date, 'updated -> new Date, 'transfers -> 0).executeUpdate()
 		}
   }
+
+  def make(subscriber_id: Long, target_id: Long, topic_id: Long, policy: String): Subscription = {
+    create(subscriber_id, target_id, topic_id, policy)
+    findByTopicAndTarget(topic_id, target_id).head
+  }
+
   def delete(id: Long) {
   	DB.withConnection { implicit c =>
   		SQL("delete from subscription where id = {id}").on('id -> id).executeUpdate()

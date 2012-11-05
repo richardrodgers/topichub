@@ -98,6 +98,8 @@ object SwordServer extends Controller {
         case Left(err) => error = err; null
       }
       if (item != null) {
+        // get rid of temp file
+        tmpFile.delete
         coll.recordDeposit
         // notify an asynch cataloger worker for further processing
         cataloger ! item

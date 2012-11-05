@@ -9,7 +9,7 @@
       			<li class="nav-header">Collections</li>
       		  @for(pub <- pubs) {
               @for(coll <- pub.collections) { 
-         			  <li><a href="@routes.Application.topicBrowse(1L)">@coll.description</a> (@HubUtils.pluralize(coll.deposits, "article"))</li>
+         			  <li><a href="@routes.Application.itemBrowse(coll.id)">@coll.description</a> (@HubUtils.pluralize(coll.deposits, "article"))</li>
        			  }
             }
       		</ul>

@@ -59,11 +59,23 @@ object Subscriber {
     }
   }
 
+  def findByContact(contact: String): Option[Subscriber] = {
+    DB.withConnection { implicit c =>
+      SQL("select * from subscriber where contact = {contact}").on('contact -> contact).as(subscriber.singleOpt)
+    }
+  }
+
+   def authenticate(email: String, password: String): Option[Subscriber] = {
+    DB.withConnection { implicit c =>
+      SQL("select * from subscriber where contact = {email} and password = {password}").on('email -> email, 'password -> password).as(subscriber.singleOpt)
+    }
+  }
+
   def create(userId: String, password: String, home: Option[String], logo: Option[String], role: String, contact: String,
              swordService: String, terms: String, backFile: String) {
 		DB.withConnection { implicit c =>
-			SQL("insert into subscriber (userId, password, home, logo, role, contact, swordService, terms, backFile) values ({userId}, {password}, {home}, {logo}, {role}, {contact}, {swordService}, {terms}, {backFile})")
-      .on('userId -> userId, 'password -> password, 'home -> home, 'logo -> logo, 'role -> role, 'contact -> contact, 'swordService -> swordService, 'terms -> terms, 'backFile -> backFile).executeUpdate()
+			SQL("insert into subscriber (userId, password, home, logo, role, contact, swordService, terms, backFile, created) values ({userId}, {password}, {home}, {logo}, {role}, {contact}, {swordService}, {terms}, {backFile}, {created})")
+      .on('userId -> userId, 'password -> password, 'home -> home, 'logo -> logo, 'role -> role, 'contact -> contact, 'swordService -> swordService, 'terms -> terms, 'backFile -> backFile, 'created -> new Date).executeUpdate()
 		}
   }
 
