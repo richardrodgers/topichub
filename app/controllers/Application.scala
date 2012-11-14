@@ -123,10 +123,10 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such scheme"))
   }
 
-  def topicSubscribe(id: Long) = Action { implicit request =>
+  def topicSubscribe(id: Long, load: String) = Action { implicit request =>
     Topic.findById(id).map( t => {
       val sub = Subscriber.findByContact(request.session.get("email").get).get
-      Ok(views.html.topic_subscribe(id, sub.targets))
+      Ok(views.html.topic_subscribe(id, sub.targetsWith(load)))
     }
     ).getOrElse(NotFound("No such topic"))
   }
@@ -135,7 +135,7 @@ object Application extends Controller {
     Topic.findById(id).map( t => {
       val sub = Subscriber.findByContact(request.session.get("email").get).get
       // create a subscription and pass to a conveyor
-      val targ_id = request.queryString.get("target").getOrElse(List("0L")).head.toLong
+      val targ_id = request.body.asFormUrlEncoded.get.get("target").get.head.toLong
       conveyor ! Subscription.make(sub.id, targ_id, id, "all")
       Ok(views.html.item_index(Publisher.all))
     }
@@ -210,6 +210,10 @@ object Application extends Controller {
         Redirect(routes.Application.publisher(id))
       }
     )
+  }
+
+  def itemUrl(id: Long) = {
+    routes.Application.item(id)
   }
 
   val schemeForm = Form(
@@ -334,8 +338,7 @@ object Application extends Controller {
       value => {
         val pm2 = PackageMap.findById(id).get
         val (scheme_id, source, format, _) = pmSchemeForm.bindFromRequest.get
-        val scheme = Scheme.findById(scheme_id).get
-        pm2.addMapping(scheme, source, format, 0)
+        pm2.addMapping(scheme_id, source, format, 0)
         Redirect(routes.Application.pkgmap(id))
       }
     )
@@ -524,10 +527,12 @@ object Application extends Controller {
     mapping(
       "id" -> ignored(0L),
       "subscriber_id" -> ignored(1L),
+      "protocol" -> nonEmptyText,
+      "load" -> nonEmptyText,
       "description" -> nonEmptyText,
       "userId" -> nonEmptyText,
       "password" -> nonEmptyText,
-      "depositUrl" -> nonEmptyText,
+      "targetUrl" -> nonEmptyText,
       "created" -> ignored(new Date),
       "updated" -> ignored(new Date),
       "tarnsfers" -> ignored(0)
@@ -548,15 +553,179 @@ object Application extends Controller {
     targetForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_target(sid, errors)),
       value => {
-        Target.create(sid, value.description, value.userId, value.password, value.depositUrl)
+        Target.create(sid, value.protocol, value.load, value.description, value.userId, value.password, value.targetUrl)
         Redirect(routes.Application.subscriber(sid))
       }
     )
   }
 
   def subscription(id: Long) = Action {
-    Subscription.findById(id).map( s => 
-      Ok(views.html.subscription(s))
+    Subscription.findById(id).map( s => {
+      val topic = Topic.findById(s.topic_id).get
+      Ok(views.html.subscription(s, topic))
+      }
     ).getOrElse(NotFound("No such subscription"))
   }
+
+  // Content Model operations
+
+  // export the content model in JSON
+  def cmodel = Action { 
+    val model = Map(
+      "schemes" -> jsonSchemes,
+      "ctypes" -> jsonCtypes,
+      "pkgmaps" -> jsonPkgmaps
+    )
+    Ok(Json.stringify(toJson(model)))
+  }
+
+  def jsonSchemes = {
+    val msg = Scheme.all.map( s => 
+      Map("schemeId" -> toJson(s.schemeId),
+          "gentype"  -> toJson(s.gentype),
+          "category" -> toJson(s.category),
+          "description" -> toJson(s.description),
+          "home" -> toJson(s.home),
+          "logo" -> toJson(s.logo),
+          "finders" -> jsonFinders(s.id)
+      )
+    )
+    toJson(msg)
+  }
+
+  def jsonFinders(sid: Long) = {
+    val msg = Finder.findByScheme(sid).map ( f =>
+      Map("description" -> toJson(f.description),
+          "cardinality" -> toJson(f.cardinality),
+          "format" -> toJson(f.format),
+          "idKey" -> toJson(f.idKey),
+          "idLabel" -> toJson(f.idLabel),
+          "author" -> toJson(f.author)
+      )
+    )
+    toJson(msg)
+  }
+
+  def jsonCtypes = {
+    val msg = Ctype.all.map( t =>
+      Map("ctypeId" -> toJson(t.ctypeId),
+          "description" -> toJson(t.description),
+          "logo" -> toJson(t.logo),
+          "meta" -> toJson(t.schemes("meta").map(s => s.schemeId)),
+          "index" -> toJson(t.schemes("index").map(s => s.schemeId)),
+          "topic" -> toJson(t.schemes("topic").map(s => s.schemeId))
+      )
+    )
+    toJson(msg)
+  }
+
+  def jsonPkgmaps = {
+    val msg = PackageMap.all.map( m =>
+      Map("pkgmapId" -> toJson(m.pkgmapId),
+          "description" -> toJson(m.description),
+          "swordurl" -> toJson(m.swordurl),
+          "mappings" -> jsonPkgMappings(m)
+      )
+    )
+    toJson(msg)
+  }
+
+  def jsonPkgMappings(pkgMap: PackageMap) = {
+    val msg = pkgMap.schemes.map(s => 
+      Map ("scheme" -> toJson(s.schemeId),
+           "maps" -> jsonPkgSchemeMappings(pkgMap, s))
+    )
+    toJson(msg)
+  }
+
+  def jsonPkgSchemeMappings(pkgMap: PackageMap, scheme: Scheme) = {
+    val msg = pkgMap.mappingsForScheme(scheme).map( m =>
+      Map("source" -> toJson(m._1),
+          "format" -> toJson(m._2),
+          "rank" -> toJson(m._3)
+      )
+    ) 
+    toJson(msg)   
+  }
+
+  def setCmodel = Action(parse.json) { request =>
+    // read in a content model and update system in cases where 
+    // model compnents are not already installed. Note that
+    // this relies on the uniqueness of scheme, etc Ids
+    val schemes = (request.body \ "schemes")
+    procJsArray(schemes, 0, schemeFromCmodel)
+    val ctypes = (request.body \ "ctypes")
+    procJsArray(ctypes, 0, ctypeFromCmodel)
+    val pkgmaps = (request.body \ "pkgmaps")
+    procJsArray(pkgmaps, 0, pkgmapFromCmodel)
+    Ok("???")
+  }
+
+  def procJsArray(arr: JsValue, index: Int, func: JsValue => Unit): Unit = {
+    arr(index) match {
+      case und: JsUndefined => Nil
+      case jsval: JsValue => func(jsval); procJsArray(arr, index + 1, func)
+    }
+  }
+
+  def schemeFromCmodel(jss: JsValue) {
+    //println(Json.stringify(jss))
+    val schemeId = forName(jss, "schemeId")
+    // only create if not already defined
+    if (Scheme.findByName(schemeId).isEmpty) {
+      Scheme.create(schemeId, forName(jss, "gentype"), forName(jss, "category"),
+                    forName(jss, "description"), oforName(jss, "home"), oforName(jss, "logo"))
+      val scheme = Scheme.findByName(schemeId).get
+      val finders = (jss \ "finders")
+      procJsArray(finders, 0, finderFromCmodel(scheme.id))
+    }
+  }
+
+  def finderFromCmodel(scheme_id: Long)(jsf: JsValue) {
+    Finder.create(scheme_id, forName(jsf, "description"), forName(jsf, "cardinality"), forName(jsf, "format"),
+                  forName(jsf, "idKey"), forName(jsf, "idLabel"), forName(jsf, "author"))
+  }
+
+  def ctypeFromCmodel(jsc: JsValue) {
+    val ctypeId = forName(jsc, "ctypeId")
+    // only create if not already defined
+    if (Ctype.findByName(ctypeId).isEmpty) {
+      Ctype.create(ctypeId, forName(jsc, "description"), oforName(jsc, "logo"))
+      val ctype = Ctype.findByName(ctypeId).get
+      procJsArray((jsc \ "meta"), 0, ctMapFromCmodel(ctype, "meta"))
+      procJsArray((jsc \ "index"), 0, ctMapFromCmodel(ctype, "index"))
+      procJsArray((jsc \ "topic"), 0, ctMapFromCmodel(ctype, "topic"))
+    }
+  }
+
+  def ctMapFromCmodel(ctype: Ctype, reln: String)(jsc: JsValue) {
+    val scheme = Scheme.findByName(jsc.as[String]).get
+    ctype.addScheme(scheme, reln)
+  }
+
+  def pkgmapFromCmodel(jsp: JsValue) {
+    val pkgmapId = forName(jsp, "pkgmapId")
+    // only create if not already defined
+    if (PackageMap.findByName(pkgmapId).isEmpty) {
+      PackageMap.create(pkgmapId, forName(jsp, "description"), oforName(jsp, "swordurl"))
+      val pkgmap = PackageMap.findByName(pkgmapId).get
+      val mappings = (jsp \ "mappings")
+      procJsArray(mappings, 0, pmMapFromCmodel(pkgmap))
+    }
+  }
+
+  def pmMapFromCmodel(pkgmap: PackageMap)(jsc: JsValue) {
+    val schemeId = forName(jsc, "scheme")
+    val scheme = Scheme.findByName(schemeId).get
+    val maps = (jsc \ "maps")
+    procJsArray(maps, 0, pmSubMapFromCmodel(pkgmap, scheme.id))
+  }
+
+  def pmSubMapFromCmodel(pkgmap: PackageMap, sid: Long)(jsm: JsValue) {
+    pkgmap.addMapping(sid, forName(jsm, "source"), forName(jsm, "format"), forNum(jsm, "rank"))
+  }
+
+  def forName(jsv: JsValue, name: String): String = (jsv \ name).as[String]
+  def oforName(jsv: JsValue, name: String): Option[String] = (jsv \ name).asOpt[String]
+  def forNum(jsv: JsValue, name: String): Int = (jsv \ name).as[Int]
 }

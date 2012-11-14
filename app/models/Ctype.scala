@@ -11,7 +11,7 @@ import anorm.SqlParser._
 import anorm.~
 import anorm.SQL
 
-/** Ctpye represents a content type.
+/** Ctype represents a content type.
   *
   * @author richardrodgers
   */

@@ -7,10 +7,12 @@
     <h2>Add a new destination</h2> 
     @form(routes.Application.createTarget(subscriber_id)) {
         
+        @inputText(targetForm("protocol"))
+        @inputText(targetForm("load"))
         @inputText(targetForm("description"))
         @inputText(targetForm("userId"))
         @inputText(targetForm("password")) 
-        @inputText(targetForm("depositUrl")) 
+        @inputText(targetForm("targetUrl")) 
         
         <input type="submit" value="Create">      
     }

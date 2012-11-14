@@ -10,15 +10,16 @@
        <p>@HubUtils.pluralize(topic.subscriptionCount, "subscriber")</p>
        <p>Added @HubUtils.fmtDate(topic.created) @HubUtils.pluralize(topic.transfers, "transfer") - latest @HubUtils.fmtDate(topic.updated)</p>
        <span>
-             <a href="@routes.Application.topicSubscribe(topic.id)" class="btn btn-primary btn-large">Subscribe &raquo;</a>
-             <a class="btn btn-primary btn-large pull-right">Notify &raquo;</a>
+             <a href="@routes.Application.topicSubscribe(topic.id, "full")" class="btn btn-primary btn-large">Subscribe &raquo;</a>
+             <a href="@routes.Application.topicSubscribe(topic.id, "alert")" class="btn btn-primary btn-large pull-right">Notify Me &raquo;</a>
        </span>
      </div>
 
      <h3>Recent Articles</h3>
-     <ul>
+     <dl>
      	@topic.items.map { item =>
-     	  <li><a href="@routes.Application.item(item.id)">@item.metadataValue("title")</a></li>
+     	  <dt><a href="@routes.Application.item(item.id)">@item.metadataValue("title")</a></dt>
+        <dd>@item.metadataValues("author").mkString("; ")</dd>
       }
-     </ul>
+     </dl>
 }

@@ -4,13 +4,22 @@
   */
 package workers
 
+import java.nio.charset.Charset
 import akka.actor.Actor
+import com.ning.http.client.Realm._
+import play.api._
+import play.api.Play.current
+import play.api.http.HeaderNames._
+import play.api.mvc._
+import play.api.mvc.Results._
+import play.api.libs.ws.WS
 
-import controllers.SwordClient
+import controllers.{Application, SwordClient}
 import models.{Item, Target, Transfer, Subscription, Topic}
 
-/** Conveyor delivers content to specified targets.
+/** Conveyor delivers content or data to specified targets.
   * Currently only delivery mode is SWORD deposit
+  * or email notifications (using REST API for email)
   *
   * @author richardrodgers
   */
@@ -28,11 +37,15 @@ object  Conveyor {
 
   import play.api.Play.current
 
+  val emailSvc = Play.configuration.getString("hub.email.url").get
+  val cset = Charset.forName("UTF-8")
+  val hubUrl = Play.configuration.getString("hub.server.url").get
+
   def transfer(trans: Transfer) {
     // deliver item according to transfer instructions
     val item = Item.findById(trans.item_id).get
     val target = Target.findById(trans.target_id).get
-    transferItem(trans, item, target)
+    transferItem(trans, item, target, None)
   }
 
   def fulfill(sub: Subscription) {
@@ -42,8 +55,8 @@ object  Conveyor {
       val topic = Topic.findById(sub.topic_id).get
       val target = Target.findById(sub.target_id).get
       topic.items.foreach( item => {
-        val transfer = Transfer.make(target.id, item.id, sub.id, None)
-        transferItem(transfer, item, target)
+        val transfer = Transfer.make(target.id, item.id, sub.id, Some("none"))
+        transferItem(transfer, item, target, Some(topic))
       })
     }
   }
@@ -54,21 +67,56 @@ object  Conveyor {
     item.topics.foreach( topic => {
       topic.subscriptions.foreach( sub => {
         val target = Target.findById(sub.target_id).get
-        val transfer = Transfer.make(target.id, item.id, sub.id, None)
-        transferItem(transfer, item, target)      
+        val transfer = Transfer.make(target.id, item.id, sub.id, Some("none"))
+        transferItem(transfer, item, target, Some(topic))      
       })
     })
   }
 
-  private def transferItem(transfer: Transfer, item: Item, target: Target) {
-    // only SWORD deposit currently supported
-    SwordClient.makeDeposit(item, target)
+  private def transferItem(transfer: Transfer, item: Item, target: Target, topic: Option[Topic]) {
+    // only transfer options currently supported are SWORD deposit or email notification
+    target.protocol match {
+      case "sword" => SwordClient.makeDeposit(item, target)
+      case "email" => emailNotify(item, target, topic.get)
+    } 
     // update objects to reflect delivery
     transfer.updateState("done")
     item.recordTransfer
     target.recordTransfer
     if (transfer.subscription_id != -1) {
       Subscription.findById(transfer.subscription_id).get.recordTransfer
+      topic.get.recordTransfer
     }
+  }
+
+  // this implementation is very mailgun-specific - ultimately will
+  // need to provide a plugin system (including smtp option)
+  def emailNotify(item: Item, target: Target, topic: Topic) {
+
+    import java.io.ByteArrayOutputStream
+    import org.apache.http.entity.mime.MultipartEntity
+    import org.apache.http.entity.mime.content._
+
+    val entity = new MultipartEntity()
+    // should all customization of this
+    entity.addPart("from", new StringBody("noreply@topichub.org", cset))
+    // assumes targetUrl is a 'mailto:' URL (length 7)
+    entity.addPart("to", new StringBody(target.targetUrl.substring(7), cset))
+    val subj = "TopicHub Alert - new in: " + topic.title
+    entity.addPart("subject", new StringBody(subj, cset))
+    val text = "Now available on TopicHub:\n" + 
+               "Title: " + item.metadataValue("title") + "\n" +
+               "Authors: " + item.metadataValues("author").mkString(";") + "\n" +
+               "Link: " + hubUrl + Application.itemUrl(item.id)
+    entity.addPart("text", new StringBody(text, cset))
+    val out = new ByteArrayOutputStream
+    entity.writeTo(out)
+    //println("about to email: " + emailSvc)
+    val header = (entity.getContentType.getName, entity.getContentType.getValue)
+    val req = WS.url(emailSvc)
+    .withHeaders(header)
+    .withAuth(target.userId, target.password, AuthScheme.BASIC)
+    val resp = req.post(out.toByteArray()).await.get
+    //println("resp: " + resp.body)
   }
 }

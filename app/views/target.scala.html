@@ -8,7 +8,7 @@
      <h3>Subscriptions</h3>
      <ul>
      @target.subscriptions.map { sub =>
-			 <li><a href="@routes.Application.subscription(sub.id)">Topic: @sub.topic_id</a></li>
+			 <li>Topic: <a href="@routes.Application.subscription(sub.id)">@Topic.findById(sub.topic_id).get.title</a></li>
      }
      </ul>
 }

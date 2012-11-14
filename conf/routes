@@ -49,7 +49,7 @@ GET     /items                       controllers.Application.items
 #GET     /items/search               controllers.Application.itemSearch
 GET     /items/:cid/browse           controllers.Application.itemBrowse(cid: Long)
 GET     /item/:id                    controllers.Application.item(id: Long)
-GET     /item/file/:id               controllers.Application.itemFile(id: Long)
+GET     /item/package/:id            controllers.Application.itemFile(id: Long)
 GET     /item/transfer/:id           controllers.Application.itemTransfer(id: Long)
 GET     /item/dotransfer/:id         controllers.Application.transfer(id: Long)
 
@@ -58,7 +58,7 @@ GET     /topics                      controllers.Application.topics
 #GET     /topics/search               controllers.Application.topicSearch
 GET     /topics/:sid/browse          controllers.Application.topicBrowse(sid: Long)
 GET     /topic/:id                   controllers.Application.topic(id: Long)
-GET     /topic/subscribe/:id         controllers.Application.topicSubscribe(id: Long)
+GET     /topic/subscribe/:id         controllers.Application.topicSubscribe(id: Long, load: String)
 POST    /topic/subscribe/:id         controllers.Application.subscribe(id: Long)
 
 # Subscriber pages
@@ -92,6 +92,8 @@ POST    /oai                        controllers.OAI.provide
 # OAI-ResourceSync services (TODO)
 
 # Interhub services (TODO)
+GET     /cmodel                     controllers.Application.cmodel
+PUT     /cmodel                     controllers.Application.setCmodel
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

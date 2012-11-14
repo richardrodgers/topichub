@@ -8,7 +8,7 @@
 
      <h3>Mappings</h3>
      <ul>
-        @pkgmap.mappings.map { scheme =>
+        @pkgmap.schemes.map { scheme =>
             <li><a href="@routes.Application.scheme(scheme.id)">@scheme.schemeId</a>: @scheme.description</li>
         }
      </ul>

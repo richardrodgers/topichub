@@ -60,8 +60,8 @@ case class Item(id: Long, collection_id: Long, ctype_id: Long, itemId: String,
   def recordTransfer {
     val newTrans = transfers + 1
     DB.withConnection { implicit c =>
-      SQL("update item set transfers = {transfers} and updated = {updated} where id = {id} ")
-      .on('transfers -> newTrans, 'updated -> new Date, id -> id).executeUpdate()
+      SQL("update item set transfers = {transfers}, updated = {updated} where id = {id} ")
+      .on('transfers -> newTrans, 'updated -> new Date, 'id -> id).executeUpdate()
     }
   }
 }

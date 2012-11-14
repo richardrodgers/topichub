@@ -24,8 +24,8 @@ case class Transfer(id: Long, target_id: Long, item_id: Long, subscription_id: L
 
   def updateState(state: String) {
     DB.withConnection { implicit c =>
-      SQL("update transfer set state = {state} and modified = {modified} where id = {id} ")
-      .on('state -> state, 'modified -> new Date, id -> id).executeUpdate()
+      SQL("update transfer set state = {state}, modified = {modified} where id = {id} ")
+      .on('state -> state, 'modified -> new Date, 'id -> id).executeUpdate()
     }
   }
 }
@@ -33,7 +33,7 @@ case class Transfer(id: Long, target_id: Long, item_id: Long, subscription_id: L
 object Transfer {
 
   val transfer = {
-    get[Long]("id") ~ get[Long]("target_id") ~ get[Long]("item_id")  ~ get[Long]("subscription_id") ~ get[String]("target_addr") ~ 
+    get[Long]("id") ~ get[Long]("target_id") ~ get[Long]("item_id") ~ get[Long]("subscription_id") ~ get[String]("target_addr") ~ 
     get[Date]("created") ~ get[String]("state") ~ get[Date]("modified") map {
       case id ~ target_id ~ item_id ~ subscription_id ~ target_addr ~ created ~ state ~ modified => 
         Transfer(id, target_id, item_id, subscription_id, Some(target_addr), created, state, modified)

@@ -169,10 +169,12 @@ CREATE SEQUENCE target_id_seq;
 CREATE TABLE target (
   id integer NOT NULL DEFAULT nextval('target_id_seq'),
   subscriber_id integer,
+  protocol varchar NOT NULL,
+  load varchar NOT NULL,
   description varchar(255) NOT NULL,
   userId varchar(255) NOT NULL,
   password varchar(255) NOT NULL,
-  depositUrl varchar(255) NOT NULL,
+  targetUrl varchar(255) NOT NULL,
   created timestamp,
   updated timestamp,
   transfers integer,

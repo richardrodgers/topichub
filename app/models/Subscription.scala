@@ -26,8 +26,8 @@ case class Subscription(id: Long, subscriber_id: Long, target_id: Long, topic_id
   def recordTransfer {
     val newTrans = transfers + 1
     DB.withConnection { implicit c =>
-      SQL("update subscription set transfers = {transfers} and updated = {updated} where id = {id} ")
-      .on('transfers -> newTrans, 'updated -> new Date, id -> id).executeUpdate()
+      SQL("update subscription set transfers = {transfers}, updated = {updated} where id = {id} ")
+      .on('transfers -> newTrans, 'updated -> new Date, 'id -> id).executeUpdate()
     }
   }
 }

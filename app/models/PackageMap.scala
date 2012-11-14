@@ -11,12 +11,18 @@ import anorm.SqlParser._
 import anorm.~
 import anorm.SQL
 
+/** PackageMap provides an information map of a package containing item content.
+  * It locates scheme resources via package-relative file names.
+  *
+  * @author richardrodgers
+  */
+
 case class PackageMap(id: Long, pkgmapId: String, description: String, swordurl: Option[String]) {
 
-  def addMapping(scheme: Scheme, source: String, format: String, rank: Int) {
+  def addMapping(scheme_id: Long, source: String, format: String, rank: Int) {
     DB.withConnection { implicit c =>
       SQL("insert into pkgmapscheme (pkgmap_id, scheme_id, source, format, rank) values ({pkgmap_id}, {scheme_id}, {source}, {format}, {rank})")
-      .on('pkgmap_id -> id, 'scheme_id -> scheme.id, 'source -> source, 'format -> format, 'rank -> rank).executeUpdate()
+      .on('pkgmap_id -> id, 'scheme_id -> scheme_id, 'source -> source, 'format -> format, 'rank -> rank).executeUpdate()
     }
   }
 
@@ -27,7 +33,7 @@ case class PackageMap(id: Long, pkgmapId: String, description: String, swordurl:
     }
   }
 
-  def mappings: List[Scheme] = {
+  def schemes: List[Scheme] = {
     DB.withConnection { implicit c =>
       SQL("select scheme.* from scheme, pkgmapscheme, pkgmap where scheme.id = pkgmapscheme.scheme_id and pkgmapscheme.pkgmap_id = pkgmap.id and pkgmap.id = {pkgmap_id}")
       .on('pkgmap_id -> id).as(Scheme.scheme *)

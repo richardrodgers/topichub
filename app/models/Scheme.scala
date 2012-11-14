@@ -66,7 +66,7 @@ object Scheme {
   }
 
   def findByName(schemeId: String): Option[Scheme] = {
-      DB.withConnection { implicit c =>
+    DB.withConnection { implicit c =>
       SQL("select * from scheme where schemeId = {schemeId}").on('schemeId -> schemeId).as(scheme.singleOpt)
     }  
   }

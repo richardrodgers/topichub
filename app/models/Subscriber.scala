@@ -23,9 +23,16 @@ case class Subscriber(id: Long, userId: String, password: String, home: Option[S
                       contact: String, swordService: String, terms: String, backFile: String, created: Date) {
 
   def targets = {
-   DB.withConnection { implicit c =>
+    DB.withConnection { implicit c =>
       SQL("select * from target where target.subscriber_id = {id}")
       .on('id -> id).as(Target.target *)
+    }
+  }
+
+  def targetsWith(load: String) = {
+    DB.withConnection { implicit c =>
+      SQL("select * from target where target.subscriber_id = {id} and target.load = {load}")
+      .on('id -> id, 'load -> load).as(Target.target *)
     }
   }
 }

@@ -51,8 +51,16 @@ case class Topic(id: Long, scheme_id: Long, topicId: String, title: String,
 
   def subscriptions = {
     DB.withConnection { implicit c =>
-      SQL("select * from subscriptions where topic)id = {id}").on('topic_id -> id).as(Subscription.subscription *)
+      SQL("select * from subscriptions where topic_id = {id}").on('topic_id -> id).as(Subscription.subscription *)
     }    
+  }
+
+  def recordTransfer {
+    val newTrans = transfers + 1
+    DB.withConnection { implicit c =>
+      SQL("update topic set transfers = {transfers}, updated = {updated} where id = {id} ")
+      .on('transfers -> newTrans, 'updated -> new Date, 'id -> id).executeUpdate()
+    }
   }
 
 }

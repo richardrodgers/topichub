@@ -190,7 +190,7 @@ object SwordClient {
     val cFile = Store.content(item)
     /* best way - but will not work since WS wants to set mime-type to multipart/form-data
          which 1.3 Sword server won't accept */
-    var req = WS.url(target.depositUrl)
+    var req = WS.url(target.targetUrl)
     .withHeaders(CONTENT_TYPE -> "application/zip",
                  "X-packaging" -> "http://purl.org/net/sword-types/METSDSpaceSIP")
     .withAuth(target.userId, target.password, AuthScheme.BASIC)

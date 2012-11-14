@@ -5,7 +5,7 @@
 @main("Topic Subscribe - TopicHub") {
 
     <h2>Select a destination:</h2> 
-    <form action="@routes.Application.subscribe(id)">
+    <form action="@routes.Application.subscribe(id)" method="POST">
     @targets.map { target =>
         <input type="radio" name="target" value="@target.id"/>&nbsp@target.description<br>
     } 
