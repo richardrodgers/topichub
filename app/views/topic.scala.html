@@ -15,9 +15,9 @@
        </span>
      </div>
 
-     <h3>Recent Articles</h3>
+     <h3>Recent Articles <a href="@routes.Application.itemBrowse("topic", topic.id, 0)">Browse All</a></h3>
      <dl>
-     	@topic.items.map { item =>
+     	@topic.recentItems(6).map { item =>
      	  <dt><a href="@routes.Application.item(item.id)">@item.metadataValue("title")</a></dt>
         <dd>@item.metadataValues("author").mkString("; ")</dd>
       }

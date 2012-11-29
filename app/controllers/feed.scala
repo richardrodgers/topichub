@@ -21,10 +21,11 @@ object Feed extends Controller {
 
   val hubNs = "http://topichub"
   val iso8601 = ISODateTimeFormat.dateTime
+  val FEED_SIZE = 6
 
   /**
    * Generates a feed for topic identified by scheme+topicId
-   * @return Atom document or 404 if no topic exists
+   * @return Atom document or 404 if no such topic exists
    */
   def topicFeed(scheme: String, topicId: String) = Action { implicit request =>
     Topic.forSchemeAndId(scheme, topicId).map ( topic =>
@@ -47,7 +48,7 @@ object Feed extends Controller {
       <updated>{iso8601.print(topic.created.getTime())}</updated>
       <id>{hubNs + uri}</id>
       <generator uri={hubNs + "/ns/sword/1.3"} version="1.0">Topic Hub</generator>
-      { for (item <- topic.items) yield
+      { for (item <- topic.recentItems(FEED_SIZE)) yield
         <entry>
           <title>{item.metadataValue("title")}</title>
           <link href={"http://" + host + "/item/" + item.id}/>

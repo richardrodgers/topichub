@@ -22,13 +22,14 @@ import play.api.libs.json._
 
 import models._
 import store._
-import workers.{Cataloger, ConveyorWorker}
+import workers.{Cataloger, ConveyorWorker, IndexWorker}
 
 object Application extends Controller {
 
   val indexSvc = Play.configuration.getString("hub.index.url").get
 
   val conveyor = Akka.system.actorOf(Props[ConveyorWorker], name="conveyor")
+  val indexer = Akka.system.actorOf(Props[IndexWorker], name="indexer")
   
   def index = Action {
     Ok(views.html.index("Your new application is ready."))
@@ -55,7 +56,7 @@ object Application extends Controller {
           Ok(views.html.topic_search(topics, page))
         } else {
           val items = hits map ( id => Item.findById(id) )
-          Ok(views.html.item_search(items, page))
+          Ok(views.html.item_search(items, query, page))
         }
       }
     }
@@ -71,10 +72,47 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such item"))
   }
 
-  def itemBrowse(coll_id: Long) = Action {
-    Collection.findById(coll_id).map( c => 
-      Ok(views.html.item_browse(c))
+  def itemBrowse(filter: String, id: Long, page: Int) = Action {
+    filter match {
+      case "collection" => itemBrowseCollection(id, page)
+      case "topic" => itemBrowseTopic(id, page)
+      case _ => NotFound("No such filter")
+    }
+  }
+
+  private def itemBrowseTopic(id: Long, page: Int) = {
+    Topic.findById(id).map( topic => 
+      Ok(views.html.item_browse(id, topic.pagedItems(page, 10), "topic", topic.title, page, topic.itemCount))
+    ).getOrElse(NotFound("No such topic"))
+  }
+
+  private def itemBrowseCollection(id: Long, page: Int) = {
+    Collection.findById(id).map( coll => 
+      Ok(views.html.item_browse(id, Item.inCollection(id, page), "collection", coll.description, page, Item.collectionCount(coll.id)))
     ).getOrElse(NotFound("No such collection"))
+  }
+
+  def itemSearch(topicId: String, page: Int) = Action { implicit request =>
+    val pageSize = 20
+    val offset = page * pageSize
+    Async {
+      val req = WS.url(indexSvc + "item/_search")
+      //val req = WS.url(indexSvc + "item/_search?from=" + offset + "&size=" + pageSize)
+      //val req = WS.url(indexSvc + "item/_search?q=topicId:" + topicId + "&from=" + offset + "&size=" + pageSize)
+      val qbody = toJson(Map("query" -> toJson(Map("term" -> toJson(Map("topicId" -> topicId))))))
+      println("query: "  + Json.stringify(qbody))
+      req.post(Json.stringify(qbody)).map { response =>
+        val json = response.json
+        val hits = (json \ "hits" \\ "hits").head \\ "dbId" map(_.as[Long])
+        println("Size:" + hits.size)
+        hits foreach(x => println(x))
+        //val lhits = hits.map(x => x.asInstanceOf[JsString].value.toLong)
+        //lhits foreach( x => println(x))
+        val items = hits map ( id => Item.findById(id) )
+        val query = "topicId:" + topicId
+        Ok(views.html.item_search(items, query, page))
+      }
+    }
   }
 
   def itemFile(id: Long) = Action {
@@ -88,10 +126,21 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such item"))  
   }
 
-  def itemTransfer(id: Long) = Action { implicit request =>
+  def itemView(id: Long) = Action { implicit request =>
     Item.findById(id).map( i => {
+      val (name, mimeType) = Cataloger.contentInfo(i)
+      SimpleResult (
+        header =  ResponseHeader(200, Map(CONTENT_TYPE -> mimeType)),
+        body = Enumerator.fromStream(Store.content(i).resource(name))
+      )
+    }
+    ).getOrElse(NotFound("No such item"))
+  }
+
+  def itemTransfer(id: Long, mode: String) = Action { implicit request =>
+    Item.findById(id).map( item => {
       val sub = Subscriber.findByContact(request.session.get("email").get).get
-      Ok(views.html.item_transfer(id, sub.targets))
+      Ok(views.html.item_transfer(id, sub.targetsWith(mode)))
     }
     ).getOrElse(NotFound("No such item"))
   }
@@ -117,16 +166,16 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such topic"))
   }
 
-  def topicBrowse(scheme_id: Long) = Action {
-    Scheme.findById(scheme_id).map( s => 
-      Ok(views.html.topic_browse(s))
+  def topicBrowse(scheme_id: Long, page: Int) = Action {
+    Scheme.findById(scheme_id).map( scheme => 
+      Ok(views.html.topic_browse(scheme.id, Topic.withScheme(scheme.id, page), scheme.description, page, scheme.topicCount))
     ).getOrElse(NotFound("No such scheme"))
   }
 
-  def topicSubscribe(id: Long, load: String) = Action { implicit request =>
+  def topicSubscribe(id: Long, mode: String) = Action { implicit request =>
     Topic.findById(id).map( t => {
       val sub = Subscriber.findByContact(request.session.get("email").get).get
-      Ok(views.html.topic_subscribe(id, sub.targetsWith(load)))
+      Ok(views.html.topic_subscribe(id, sub.targetsWith(mode)))
     }
     ).getOrElse(NotFound("No such topic"))
   }
@@ -500,13 +549,24 @@ object Application extends Controller {
   )
 
   def subscribers = Action {
-    Ok(views.html.subscriber_list(Subscriber.all))
+    Ok(views.html.subscriber_index(Subscriber.all))
   }
 
   def subscriber(id: Long) = Action {
     Subscriber.findById(id).map( s => 
       Ok(views.html.subscriber(s))
     ).getOrElse(NotFound("No such subscriber"))
+  }
+
+  def subscriberBrowse(filter: String, value: String, page: Int) = Action {
+    filter match {
+      case "type" => subscriberBrowseType(value, page)
+      case _ => NotFound("No such filter")
+    }
+  }
+
+  def subscriberBrowseType(value: String, page: Int) = {
+    Ok(views.html.subscriber_browse(value, Subscriber.inRole(value, page), value, page, Subscriber.roleCount(value)))
   }
 
   def newSubscriber = Action {
@@ -565,6 +625,12 @@ object Application extends Controller {
       Ok(views.html.subscription(s, topic))
       }
     ).getOrElse(NotFound("No such subscription"))
+  }
+
+  // Admin functions
+  def reindex(dtype: String) = Action {
+    indexer ! dtype
+    Ok(views.html.index("reindex complete"))
   }
 
   // Content Model operations

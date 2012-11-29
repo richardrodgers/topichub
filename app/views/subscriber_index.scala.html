@@ -1,0 +1,24 @@
+@(subs: List[Subscriber])
+
+@main("Subscribers -  TopicHub") {
+  <div class="container-fluid">
+  	<div class="row-fluid">
+      <div class="span4">
+      	<div class="well sidebar-nav">
+      		<ul class="nav nav-list">
+      			<li class="nav-header">Types</li>
+      		  @for(role <- Subscriber.roles) {
+         	    <li><a href="@routes.Application.subscriberBrowse("type", role)">@role</a> (@HubUtils.pluralize(Subscriber.roleCount(role), "subscriber"))</li>
+       			}
+      		</ul>
+      	</div>
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Become a Subscriber!</h2>
+          <p>Items are always available and topics assist in discovering items of interest, but only by becoming a subscriber can you enjoy the real power of TopicHub, which is the ability to route content to your repository automatically and perpetually. You need only express which topics you would like to subscribe to, and the hub will fulfill these subscriptions (new content, or include the 'backfile' at your discretion). You may add, cancel or adjust your subscription <em>portfolio</em> at any time. Explore fellow subscribers by browsing their type (Institutional Repository, e.g) at left. 
+        </div>
+      </div>
+    </div>
+  </div>
+}

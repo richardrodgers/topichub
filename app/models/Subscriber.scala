@@ -29,10 +29,10 @@ case class Subscriber(id: Long, userId: String, password: String, home: Option[S
     }
   }
 
-  def targetsWith(load: String) = {
+  def targetsWith(mode: String) = {
     DB.withConnection { implicit c =>
       SQL("select * from target where target.subscriber_id = {id} and target.load = {load}")
-      .on('id -> id, 'load -> load).as(Target.target *)
+      .on('id -> id, 'load -> mode).as(Target.target *)
     }
   }
 }
@@ -54,10 +54,36 @@ object Subscriber {
   }
 
   def count = {
-     DB.withConnection { implicit c =>
+    DB.withConnection { implicit c =>
       val count = SQL("select count(*) as c from subscriber").apply.head
       count[Long]("c")
     }
+  }
+
+  def roles = {
+    DB.withConnection { implicit c =>
+      SQL("select distinct role from subscriber").as(scalar[String] *)
+    }
+  }
+
+  def roleCount(role: String) = {
+    DB.withConnection { implicit c =>
+      val count = SQL("select count(*) as c from subscriber where role = {role}").on('role -> role).apply.head
+      count[Long]("c")
+    }
+  }
+
+  def inRole(role: String, page: Int) = {
+    val offset = page * 10
+    DB.withConnection { implicit c =>
+      SQL(
+        """
+          select * from subscriber where role = {role}
+          order by created desc
+          limit 10 offset {offset}
+        """
+      ).on('role -> role, 'offset -> offset).as(subscriber *)
+    }  
   }
 
   def findById(id: Long): Option[Subscriber] = {

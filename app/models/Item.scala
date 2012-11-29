@@ -32,6 +32,12 @@ case class Item(id: Long, collection_id: Long, ctype_id: Long, itemId: String,
     }
   }
 
+  def topicsByScheme = {
+    topics.groupBy(_.scheme_id).map { el =>
+      (Scheme.findById(el._1).get.schemeId, el._2)
+    }
+  }
+
   def addMetadata(mdname: String, mdvalue: String) {
     DB.withConnection { implicit c =>
       SQL("insert into metadata (item_id, mdname, mdvalue) values ({item_id}, {mdname}, {mdvalue})")
@@ -132,11 +138,24 @@ object Item {
     }
   }
 
-  def inCollection(coll_id: Long): List[Item] = {
+  def inCollection(coll_id: Long, page: Int): List[Item] = {
+    val offset = page * 10
     DB.withConnection { implicit c =>
-      SQL("select * from item where collection_id = {id}").on('id -> coll_id).as(item *)
+      SQL(
+        """
+          select * from item where collection_id = {id}
+          order by created desc
+          limit 10 offset {offset}
+        """
+      ).on('id -> coll_id, 'offset -> offset).as(item *)
     }  
+  }
 
+  def collectionCount(coll_id: Long) = {
+    DB.withConnection { implicit c =>
+      val count = SQL("select count(*) as c from item where collection_id = {id}").on('id -> coll_id).apply.head
+      count[Long]("c")
+    }
   }
 
   def delete(id: Long) {

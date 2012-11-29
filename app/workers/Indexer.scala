@@ -40,6 +40,7 @@ class IndexWorker extends Actor {
   def receive = {
     case item: Item => Indexer.index(item, None)
     case topic: Topic => Indexer.index(topic)
+    case dtype: String => Indexer.reindex(dtype)
     case _ => println("bar")
   }
 }
@@ -243,11 +244,21 @@ object Indexer {
 
   val indexSvc = Play.configuration.getString("hub.index.url").get
 
+  def reindex(dtype: String) = {
+    val delreq = WS.url(indexSvc + dtype)
+    delreq.delete()
+    if ("topic".equals(dtype)) {
+      Topic.all.foreach(index(_))
+    } //else if ("item".equals(dtype)) {
+    //  Item.all.foreach(index(_))
+    //}
+  }
+
   def index(topic: Topic) = {
     // minimal indexing: dbId, schemeId, topicId, and title
     val data = Map("dbId" -> toJson(topic.id),
                    "schemeId" -> toJson(topic.scheme.get.schemeId),
-                   "topicId" -> toJson(topic.id),
+                   "topicId" -> toJson(topic.topicId),
                    "title" -> toJson(topic.title))
     val jdata = stringify(toJson(data))
     // debug
@@ -272,10 +283,10 @@ object Indexer {
     val ctype = Ctype.findById(item.ctype_id).get
     dataMap += "dbId" -> toJson(item.id)
     // add all defined index fields
-    ctype.schemes("index").foreach( dataMap += addMetadata(_, item) )
+    ctype.schemes("index").foreach(dataMap += addMetadata(_, item))
     // also add all topics
-    item.topics.foreach( dataMap += addSchemeId(_) )
-    item.topics.foreach( dataMap += addTopicId(_) )
+    dataMap += "topicSchemeId" -> toJson(item.topics.map(_.scheme.get.schemeId))
+    dataMap += "topicId" -> toJson(item.topics.map(_.topicId))
     val req = WS.url(indexSvc + "item/" + item.id)
     req.put(stringify(toJson(dataMap)))
   }
@@ -283,14 +294,6 @@ object Indexer {
   private def addMetadata(scheme: Scheme, item: Item) = {
     // NB: need logic here to test whether scheme is metadata or not
     scheme.schemeId -> toJson(item.metadataValue(scheme.schemeId))
-  }
-
-  private def addSchemeId(topic: Topic) = {
-    "topicSchemeId" -> toJson(topic.scheme.get.schemeId) 
-  }
-
-  private def addTopicId(topic: Topic) = {
-    "topicId" -> toJson(topic.topicId) 
   }
 }
 

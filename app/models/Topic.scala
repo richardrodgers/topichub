@@ -1,6 +1,6 @@
 /**
  * Copyright 2012 MIT Libraries
- * Licensed under:  http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under: http://www.apache.org/licenses/LICENSE-2.0
  */
 package models
 
@@ -13,7 +13,8 @@ import anorm.SqlParser._
 import anorm.~
 import anorm.SQL
 
-/** Topic represents a value in a namespace (its scheme). It is the object of subscriptions
+/** Topic represents a value in a namespace (its scheme). Topics are assigned
+  * to items, and become the object of subscriptions.
   *
   * @author richardrodgers
   */
@@ -28,7 +29,33 @@ case class Topic(id: Long, scheme_id: Long, topicId: String, title: String,
     }
   }
 
-   def itemCount = {
+  def recentItems(max: Int) = {
+    DB.withConnection { implicit c =>
+      SQL(
+        """
+          select item.* from item, itemtopic
+          where item.id = itemtopic.item_id and itemtopic.topic_id = {topic_id}
+          order by item.created desc limit {max}
+        """
+      ).on('topic_id -> id, 'max -> max).as(Item.item *)
+    }
+  }
+
+  def pagedItems(page: Int, max: Int) = {
+    val offset = page * max
+    DB.withConnection { implicit c =>
+      SQL(
+        """
+          select item.* from item, itemtopic
+          where item.id = itemtopic.item_id and itemtopic.topic_id = {topic_id}
+          order by item.created desc
+          limit {max} offset {offset}
+        """
+      ).on('topic_id -> id, 'max -> max, 'offset -> offset).as(Item.item *)
+    }    
+  }
+
+  def itemCount = {
     DB.withConnection { implicit c =>
       val count = SQL("select count(*) as c from itemtopic where topic_id = {id}").on('id -> id).apply.head
       count[Long]("c")
@@ -51,7 +78,7 @@ case class Topic(id: Long, scheme_id: Long, topicId: String, title: String,
 
   def subscriptions = {
     DB.withConnection { implicit c =>
-      SQL("select * from subscriptions where topic_id = {id}").on('topic_id -> id).as(Subscription.subscription *)
+      SQL("select * from subscription where topic_id = {id}").on('id -> id).as(Subscription.subscription *)
     }    
   }
 
@@ -88,9 +115,17 @@ object Topic {
     }
   }
 
-  def withScheme(scheme_id: Long): List[Topic] = {
+  def withScheme(scheme_id: Long, page: Int): List[Topic] = {
+      val offset = page * 10
       DB.withConnection { implicit c =>
-      SQL("select * from topic where scheme_id = {scheme_id}").on('scheme_id -> scheme_id).as(topic *)
+      SQL(
+        """
+          select * from topic
+          where scheme_id = {scheme_id}
+          order by title
+          limit 10 offset {offset}
+        """
+      ).on('scheme_id -> scheme_id, 'offset -> offset).as(topic *)
     }   
   }
 
@@ -104,8 +139,12 @@ object Topic {
     val created = new Date
     val updated = created
 		DB.withConnection { implicit c =>
-			SQL("insert into topic (scheme_id, topicId, title, created, updated, transfers) values ({scheme_id}, {topicId}, {title}, {created}, {updated}, {transfers})")
-      .on('scheme_id -> scheme_id, 'topicId -> topicId, 'title -> title, 'created -> created, 'updated -> updated, 'transfers -> 0).executeUpdate()
+			SQL(
+        """
+          insert into topic (scheme_id, topicId, title, created, updated, transfers)
+          values ({scheme_id}, {topicId}, {title}, {created}, {updated}, {transfers})
+        """
+      ).on('scheme_id -> scheme_id, 'topicId -> topicId, 'title -> title, 'created -> created, 'updated -> updated, 'transfers -> 0).executeUpdate()
 		}
   }
 

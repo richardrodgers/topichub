@@ -1,13 +1,21 @@
-@(scheme: Scheme)
+@(id: Long, topics: List[Topic], description: String, page: Int, total: Long)
+
+@pagination = {
+   <span>
+     <a href="@routes.Application.topicBrowse(id, page - 1)">&laquo; Previous</a>
+     Showing @(page * 10 + 1) - @(page * 10 + topics.length) of @total
+     <a href="@routes.Application.topicBrowse(id, page + 1)">Next &raquo;</a>
+   </span>	
+}
 
 @main("Topic Browse -  TopicHub") {
-
-     <h2>Topic Browse by Scheme</h2>
-     <p>@scheme.category: @scheme.description</p>
-     <h3>Topics</h3>
+     <h2>Browse Topics by Scheme</h2>
+     <h3>@description</h3>
+     @pagination
      <ul>
-       @Topic.withScheme(scheme.id).map { topic =>
+       @topics.map { topic =>
          <li><a href="@routes.Application.topic(topic.id)">@topic.topicId</a> @topic.title</li>
        }
      </ul>
+     @pagination
 }

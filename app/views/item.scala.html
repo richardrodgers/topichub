@@ -1,21 +1,34 @@
 @(item: Item)
 
 @main("Item - TopicHub") {
-
     <div class="hero-unit">
      <h2>@item.metadataValue("title")</h2>
      <p>@item.metadataValues("author").mkString("; ")</p>
      <p>@item.metadataValue("citation")</p>
      <p>@HubUtils.pluralize(item.transfers, "transfer") since @HubUtils.fmtDate(item.created). Most recent @HubUtils.fmtDate(item.updated)</p>
      <p>
-        <a href="@routes.Application.itemTransfer(item.id)" class="btn btn-primary btn-large">Deposit &raquo;</a>
-        <a href="@routes.Application.itemFile(item.id)" class="btn btn-primary btn-large pull-right">Download &raquo;</a>
+        <a href="@routes.Application.itemView(item.id)" target="_blank" class="btn btn-primary btn-large">View &raquo;</a>
+        <a href="@routes.Application.itemFile(item.id)" class="btn btn-primary btn-large">Download &raquo;</a>
+        <a href="@routes.Application.itemTransfer(item.id, "alert")" class="btn btn-primary btn-large pull-right">Remind Me &raquo;</a>
+        <a href="@routes.Application.itemTransfer(item.id, "full")" class="btn btn-primary btn-large pull-right">Deposit &raquo;</a>
      </p>
     </div>
-     <h3>Topics</h3>
-     <ul>
-       @item.topics.map { tp =>
-         <li><a href="@routes.Application.topic(tp.id)">@tp.topicId</a>: @tp.title</li>
-       }
-     </ul>
+    <h3>Topics Arranged by Scheme</h3>
+    <ul class="nav nav-tabs">
+        @item.topicsByScheme.map { sc =>
+          <li><a href="#@sc._1" data-toggle="tab">@sc._1</a></li>
+        }
+    </ul>
+    <div class="tab-content">
+       @item.topicsByScheme.map { sc =>
+         <div class="tab-pane" id="@sc._1">
+         <p>@Scheme.findByName(sc._1).get.description</p>
+         <ul>
+          @sc._2.map { tp =>
+            <li><a href="@routes.Application.topic(tp.id)">@tp.topicId</a>: @tp.title</li>
+          }
+         </ul>
+       </div>
+      }
+    </div>
 }

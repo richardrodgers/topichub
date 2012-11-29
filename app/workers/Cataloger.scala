@@ -296,9 +296,7 @@ object Cataloger {
       println("Found scheme:" + sch.schemeId)
       cataloger.metadata(sch, item) }
       )
-    // next indexing schemes (which may have already been found as metadata)
-    Indexer.index(item, Some(cataloger))
-    // finally topic schemes
+    // next topic schemes
     ctype.schemes("topic").foreach( cataloger.topics(_, item) )
     // now assign to meta-topics as appropriate
     if (cataloger.addedTopics == 0) {
@@ -316,9 +314,23 @@ object Cataloger {
       })
       println("Found some topics")
     }
+    // next indexing schemes (which may have already been found as metadata)
+    // must follow topic extraction, since items' topics are indexed
+    Indexer.index(item, Some(cataloger))
     // finally, should this be delivered on behalf of subscriptions?
     Conveyor.newItem(item)
     //item.changeState("cataloged")
+  }
+
+  def contentInfo(item: Item) = {
+    val coll = Collection.findById(item.collection_id).get
+    val pkgmap = PackageMap.findById(coll.pkgmap_id).get
+    val cataloger = new Cataloger(pkgmap, Store.content(item))
+    // OK look in map for name of content file in package
+    val scheme = Scheme.findByName("meta").get
+    val fileInfo = pkgmap.mappingsForScheme(scheme).head
+    val filteredName = cataloger.filteredValue(fileInfo._1, 0)
+    (filteredName, fileInfo._2)
   }
 
   def testFinder(item: Item, source: String, finder: Finder) = {

@@ -1,13 +1,13 @@
-@(items: Seq[Option[Item]], page: Int)
+@(items: Seq[Option[Item]], query: String, page: Int)
 
 @main("Items -  TopicHub") {
 
-     <h2>Number of articles: @items.size</h2>
+     <h2>Search: '@query' yielded @items.size items</h2>
      <i class="icon-search"></i>
-     <ul>
+     <dl>
        @items.map { item =>
-         <li><a href="@routes.Application.item(item.get.id)">@item.get.metadataValue("title")</a>
-         </li>
+         <dt><a href="@routes.Application.item(item.get.id)">@item.get.metadataValue("title")</a></dt>
+         <dd>@item.get.metadataValues("author").mkString("; ")</dd>
        }
-     </ul>
+     </dl>
 }

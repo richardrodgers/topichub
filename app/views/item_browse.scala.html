@@ -1,13 +1,22 @@
-@(coll: Collection)
+@(id: Long, items: List[Item], filter: String, description: String, page: Int, total: Long)
+
+@pagination(page: Int) = {
+     <span>
+     	  <a href="@routes.Application.itemBrowse(filter, id, page - 1)">&laquo; Previous</a>
+     	  Viewing @(page * 10 + 1) - @(page * 10 + items.length) of @total
+        <a href="@routes.Application.itemBrowse(filter, id, page + 1)">Next &raquo;</a>
+     </span>	
+}
 
 @main("Item Browse -  TopicHub") {
-
-     <h2>Item Browse by Collection</h2>
-     <p>@coll.description</p>
-     <h3>Items</h3>
-     <ul>
-       @Item.inCollection(coll.id).map { item =>
-         <li><a href="@routes.Application.item(item.id)">@item.metadataValue("title")</a></li>
+     <h2>Browse Items by @filter</h2>
+     <h3>@description</h3>
+     @pagination(page)
+     <dl>
+       @items.map { item =>
+         <dt><a href="@routes.Application.item(item.id)">@item.metadataValue("title")</a></dt>
+         <dd>@item.metadataValues("author").mkString("; ")</dd>
        }
-     </ul>
+     </dl>
+     @pagination(page)
 }

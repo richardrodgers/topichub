@@ -46,23 +46,25 @@ POST    /pkgmap/:id                 controllers.Application.newPkgmapMapping(id:
 
 # Item pages
 GET     /items                       controllers.Application.items
-#GET     /items/search               controllers.Application.itemSearch
-GET     /items/:cid/browse           controllers.Application.itemBrowse(cid: Long)
+GET     /items/search                controllers.Application.itemSearch(topicId: String, page: Int)
+GET     /items/browse                controllers.Application.itemBrowse(filter: String, id: Long, page: Int ?= 0)
 GET     /item/:id                    controllers.Application.item(id: Long)
 GET     /item/package/:id            controllers.Application.itemFile(id: Long)
-GET     /item/transfer/:id           controllers.Application.itemTransfer(id: Long)
+GET     /item/transfer/:id           controllers.Application.itemTransfer(id: Long, mode: String)
+GET     /item/view/:id               controllers.Application.itemView(id: Long)
 GET     /item/dotransfer/:id         controllers.Application.transfer(id: Long)
 
 # Topic pages
 GET     /topics                      controllers.Application.topics
 #GET     /topics/search               controllers.Application.topicSearch
-GET     /topics/:sid/browse          controllers.Application.topicBrowse(sid: Long)
+GET     /topics/browse               controllers.Application.topicBrowse(id: Long, page: Int ?= 0)
 GET     /topic/:id                   controllers.Application.topic(id: Long)
-GET     /topic/subscribe/:id         controllers.Application.topicSubscribe(id: Long, load: String)
+GET     /topic/subscribe/:id         controllers.Application.topicSubscribe(id: Long, mode: String)
 POST    /topic/subscribe/:id         controllers.Application.subscribe(id: Long)
 
 # Subscriber pages
 GET     /subscribers                controllers.Application.subscribers
+GET     /subscribers/browse         controllers.Application.subscriberBrowse(filter: String, value: String, page: Int ?= 0)
 GET     /subscribers/create         controllers.Application.newSubscriber
 GET     /subscriber/:id             controllers.Application.subscriber(id: Long)
 GET     /target/:id                 controllers.Application.target(id: Long)
@@ -94,6 +96,9 @@ POST    /oai                        controllers.OAI.provide
 # Interhub services (TODO)
 GET     /cmodel                     controllers.Application.cmodel
 PUT     /cmodel                     controllers.Application.setCmodel
+
+# Administrative services
+GET     /reindex/:dtype             controllers.Application.reindex(dtype: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
