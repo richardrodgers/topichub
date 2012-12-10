@@ -22,6 +22,7 @@ import com.ning.http.client.Realm._
 import play.api._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.ws.WS
+import play.api.libs.Files.TemporaryFile
 import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.libs.concurrent._
@@ -59,6 +60,63 @@ object SwordServer extends Controller {
     )
   }
 
+  /** Validates and receives SWORD deposit
+    */
+
+  def processDeposit(id: Long) = Action(parse.temporaryFile) { implicit request =>
+    Collection.findById(id).map( coll => {
+      checkHeaders(request.headers).map ( error =>
+        SimpleResult (
+          header = ResponseHeader(error._1, Map(CONTENT_TYPE -> "application/atom+xml; charset=\"utf-8\"")),
+          body = Enumerator(errorDoc(error._2.toString))
+        )
+      ).getOrElse( {
+        val hdrMd5 = request.headers.get("content-md5").getOrElse(null)
+        val item = uploadPackage(request.body, coll, hdrMd5)
+        SimpleResult (
+          header = ResponseHeader(201, Map(CONTENT_TYPE -> "application/atom+xml; charset=\"utf-8\"")),
+          body = Enumerator(entryDoc(item))
+        )
+      })
+    }).getOrElse(NotFound("No such collection"))
+  }
+
+  private def checkHeaders(headers: Headers): Option[(Int, SwordError.type)] = {
+    val reportedLength = headers.get("content-length")
+    if (reportedLength != null) {
+      println("Found CL")
+      val repLen = reportedLength.get.toInt
+      if (maxUploadSize > 0 && (repLen / 1024) > maxUploadSize) {
+        (400, SwordError.MaxUploadSizeExceeded)
+      } else {
+        None
+      }
+    }
+    None
+  }
+
+  private def uploadPackage(tempFile: TemporaryFile, coll: Collection, hdrMd5: String): Item = { 
+    val tmpFile: File = new File("/Users/richardrodgers/" + counter + ".zip")
+    counter += 1
+    tempFile.moveTo(tmpFile)
+    val item = Store.upload(tmpFile, maxUploadSize, hdrMd5) match {
+      case Right(it) => createItem(coll, it)
+      case Left(err) => null //error = err; null
+    }
+    if (item != null) {
+      // get rid of temp file
+      tmpFile.delete
+      // update all objects participating in the deposit - transfer, channel, and collection
+      val chan = coll.channel.get
+      Transfer.make(chan.id, item.id, 0L, None).updateState("done")
+      chan.recordTransfer
+      coll.recordDeposit
+      // notify an asynch cataloger worker for further processing
+      cataloger ! item
+    }
+    item
+  }
+
   /** Validates and receives a SWORD deposit to this server
     */
   def acceptDeposit(collId: Long) = Action(parse.temporaryFile) { implicit request =>
@@ -78,7 +136,7 @@ object SwordServer extends Controller {
     if (error == null) {
       coll = Collection.findById(collId) match {
         case Some(x) => x
-        case None => error = SwordError.UnknownTarget; null
+        case None => error = SwordError.UnsupportedPackage; null
       }
       val pkgType = request.headers.get("x-packaging")
       if (error == null && pkgType != null) {
@@ -100,6 +158,10 @@ object SwordServer extends Controller {
       if (item != null) {
         // get rid of temp file
         tmpFile.delete
+        // update all objects participating in the deposit - transfer, channel, and collection
+        val chan = coll.channel.get
+        Transfer.make(chan.id, item.id, 0L, None).updateState("done")
+        chan.recordTransfer
         coll.recordDeposit
         // notify an asynch cataloger worker for further processing
         cataloger ! item
@@ -112,8 +174,7 @@ object SwordServer extends Controller {
   }
 
   private def createItem(coll: Collection, content: StoredContent): Item = {
-    Item.create(coll.id, coll.ctype_id, content.md5)
-    Item.findByItemId(content.md5).get
+    Item.findById(Item.create(coll.id, coll.ctype_id, content.md5).get).get
   }
 
   private def serviceDoc(colls: Seq[Collection], host: String) =
@@ -170,11 +231,11 @@ object SwordClient {
   /**
    * Obtain the service document from SWORD server, and return parsed reply
    */
-  def getServiceDoc(site: String, sub: Subscriber): NodeSeq = {
+  def getServiceDoc(site: String, sub: Subscriber, channel: Channel): NodeSeq = {
     // try to construct a (DSpace) standard swordService URL if full URL not given
     val svcUrl = if (site.startsWith("http")) site else "http://" + site + "/sword/servicedocument"
    // Async {
-      val resp = WS.url(svcUrl).withAuth(sub.userId, sub.password, AuthScheme.BASIC).get()
+      val resp = WS.url(svcUrl).withAuth(channel.userId, channel.password, AuthScheme.BASIC).get()
       resp.await.get.xml
       //resp map { response =>
         //SimpleResult (
@@ -186,14 +247,14 @@ object SwordClient {
    // }
   }
 
-  def makeDeposit(item: Item, target: Target) = {
+  def makeDeposit(item: Item, channel: Channel) = {
     val cFile = Store.content(item)
     /* best way - but will not work since WS wants to set mime-type to multipart/form-data
          which 1.3 Sword server won't accept */
-    var req = WS.url(target.targetUrl)
+    var req = WS.url(channel.channelUrl)
     .withHeaders(CONTENT_TYPE -> "application/zip",
                  "X-packaging" -> "http://purl.org/net/sword-types/METSDSpaceSIP")
-    .withAuth(target.userId, target.password, AuthScheme.BASIC)
+    .withAuth(channel.userId, channel.password, AuthScheme.BASIC)
     //req.setHeader("Content-Type", "application/zip")
     //req.setHeader("X-packaging", "http://purl.org/net/sword-types/METSDSpaceSIP")
     //req.setHeader("X-No-Op", "false")
@@ -248,7 +309,6 @@ object SwordError extends Enumeration {
     val MediationNotAllowed = Value("http://purl.org/net/sword/error/MediationNotAllowed")
     val MaxUploadSizeExceeded = Value("http://purl.org/net/sword/error/MaxUploadSizeExceeded")
     // extended error codes
-    val UnknownTarget = Value("http://topichub.org/sword/error/UnknownTarget")
     val UnsupportedPackage = Value("http://topichub.org/sword/error/UnsupportedPackage")
     val DuplicateContent = Value("http://topichub.org/sword/error/DuplicateContent")
 }

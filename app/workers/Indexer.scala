@@ -259,7 +259,7 @@ object Indexer {
     val data = Map("dbId" -> toJson(topic.id),
                    "schemeId" -> toJson(topic.scheme.get.schemeId),
                    "topicId" -> toJson(topic.topicId),
-                   "title" -> toJson(topic.title))
+                   "name" -> toJson(topic.name))
     val jdata = stringify(toJson(data))
     // debug
     println("Topic index: " + jdata)

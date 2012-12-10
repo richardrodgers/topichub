@@ -1,0 +1,24 @@
+@(form: Form[(String,String, String, String)])(implicit flash: Flash)
+
+@main("Register - TopicHub") {
+
+     <h2>Register</h2>
+
+     @helper.form(routes.Security.register) {
+        <p>
+          <input type="text" name="username" placeholder="UserName" id="username" value="@form("username").value">
+        </p>
+        <p>
+          <input type="email" name="email" placeholder="Email" id="email" value="@form("email").value">
+        </p>
+        <p>
+          <input type="password" name="password" id="password" placeholder="Password">
+        </p>
+        <p>
+          <input type="text" name="role" id="role" placeholder="Role">
+        </p>
+        <p>
+          <button type="submit" id="regbutton">Register</button>
+        </p>
+   }
+}

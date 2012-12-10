@@ -13,13 +13,13 @@ import anorm.SqlParser._
 import anorm.~
 import anorm.SQL
 
-/** Transfer is a content delivery to a destination, either a subscription target or a simple
-  * download.
+/** Transfer is a content delivery to a destination, either via a subscription target or a simple
+  * ad-hoc request.
   *
   * @author richardrodgers
   */
 
-case class Transfer(id: Long, target_id: Long, item_id: Long, subscription_id: Long, target_addr: Option[String],
+case class Transfer(id: Long, channel_id: Long, item_id: Long, subscription_id: Long, transfer_addr: Option[String],
                     created: Date, state: String, modified: Date) {
 
   def updateState(state: String) {
@@ -33,29 +33,34 @@ case class Transfer(id: Long, target_id: Long, item_id: Long, subscription_id: L
 object Transfer {
 
   val transfer = {
-    get[Long]("id") ~ get[Long]("target_id") ~ get[Long]("item_id") ~ get[Long]("subscription_id") ~ get[String]("target_addr") ~ 
+    get[Long]("id") ~ get[Long]("channel_id") ~ get[Long]("item_id") ~ get[Long]("subscription_id") ~ get[Option[String]]("transfer_addr") ~ 
     get[Date]("created") ~ get[String]("state") ~ get[Date]("modified") map {
-      case id ~ target_id ~ item_id ~ subscription_id ~ target_addr ~ created ~ state ~ modified => 
-        Transfer(id, target_id, item_id, subscription_id, Some(target_addr), created, state, modified)
+      case id ~ channel_id ~ item_id ~ subscription_id ~ transfer_addr ~ created ~ state ~ modified => 
+        Transfer(id, channel_id, item_id, subscription_id, transfer_addr, created, state, modified)
     }
   }
 
-  def create(target_id: Long, item_id: Long, subscription_id: Long, target_addr: Option[String]) {
+  def findById(id: Long): Option[Transfer] = {
+    DB.withConnection { implicit c =>
+      SQL("select * from transfer where id = {id}").on('id -> id).as(transfer.singleOpt)
+    }    
+  }
+
+  def create(channel_id: Long, item_id: Long, subscription_id: Long, transfer_addr: Option[String]) = {
 		DB.withConnection { implicit c =>
-			SQL("insert into transfer (target_id, item_id, subscription_id, target_addr, created, state, modified) values ({target_id}, {item_id}, {subscription_id}, {target_addr}, {created}, {state}, {modified})")
-      .on('target_id -> target_id, 'item_id -> item_id, 'subscription_id -> subscription_id, 'target_addr -> target_addr, 'created -> new Date, 'state -> "new", 'modified -> new Date).executeUpdate()
+			SQL("insert into transfer (channel_id, item_id, subscription_id, transfer_addr, created, state, modified) values ({channel_id}, {item_id}, {subscription_id}, {transfer_addr}, {created}, {state}, {modified})")
+      .on('channel_id -> channel_id, 'item_id -> item_id, 'subscription_id -> subscription_id, 'transfer_addr -> transfer_addr, 'created -> new Date, 'state -> "new", 'modified -> new Date).executeInsert()
 		}
   }
 
-  def findByTargetAndItem(target_id: Long, item_id: Long): List[Transfer] = {
+  def findByChannelAndItem(channel_id: Long, item_id: Long): List[Transfer] = {
     DB.withConnection { implicit c =>
-      SQL("select * from transfer where target_id = {target_id} and item_id = {item_id}").on('target_id -> target_id, 'item_id -> item_id).as(transfer *)
+      SQL("select * from transfer where channel_id = {channel_id} and item_id = {item_id}").on('channel_id -> channel_id, 'item_id -> item_id).as(transfer *)
     }
   }
 
-  def make(target_id: Long, item_id: Long, subscription_id: Long, target_addr: Option[String]): Transfer = {
-    create(target_id, item_id, subscription_id, target_addr)
-    findByTargetAndItem(target_id, item_id).head
+  def make(channel_id: Long, item_id: Long, subscription_id: Long, transfer_addr: Option[String]): Transfer = {
+    findById(create(channel_id, item_id, subscription_id, transfer_addr).get).get
   }
 
   def delete(id: Long) {

@@ -13,8 +13,8 @@ import anorm.SqlParser._
 import anorm.~
 import anorm.SQL
 
-/** Collection is a content aggregation where elements share a content type and packaging type.
-  * Collections belong to Publishers
+/** Collection is a content aggregation in which elements share a content type and packaging type.
+  * Collections belong to Publishers.
   *
   * @author richardrodgers
   */
@@ -24,9 +24,9 @@ case class Collection(id: Long, publisher_id: Long, ctype_id: Long, pkgmap_id: L
 
   def packaging = {
     DB.withConnection { implicit c =>
-      val pkg = SQL("select pkgmap.swordurl from pkgmap, collection where collection.pkgmap_id = pkgmap.id and collection.id = {id}")
+      val pkg = SQL("select pkgmap.sword_url from pkgmap, collection where collection.pkgmap_id = pkgmap.id and collection.id = {id}")
                .on('id -> id).apply().head
-      pkg[String]("swordurl")
+      pkg[String]("sword_url")
     } 
   }
 
@@ -37,13 +37,20 @@ case class Collection(id: Long, publisher_id: Long, ctype_id: Long, pkgmap_id: L
       .on('deposits -> newDep, 'id -> id).executeUpdate()
     }
   }
+
+  def channel = {
+    DB.withConnection { implicit c =>
+      SQL("select channel.* from channel, channelowner where channel.id = channelowner.channel_id and channelowner.owner_type = 'coll' and channelowner.owner_id = {id}")
+      .on('id -> id).as(Channel.channel.singleOpt)
+    }
+  }
 }
 
 object Collection {
 
   val coll = {
-    get[Long]("id") ~ get[Long]("publisher_id") ~ get[Long]("ctype_id")  ~ get[Long]("pkgmap_id") ~ get[String]("description") ~ 
-    get[String]("policy") ~ get[Date]("created") ~ get[Date]("updated") ~ get[Int]("deposits") map {
+    get[Long]("id") ~ get[Long]("publisher_id") ~ get[Long]("ctype_id") ~ get[Long]("pkgmap_id") ~
+    get[String]("description") ~ get[String]("policy") ~ get[Date]("created") ~ get[Date]("updated") ~ get[Int]("deposits") map {
       case id ~ publisher_id ~ ctype_id ~ pkgmap_id ~ description ~ policy ~ created  ~ updated ~ deposits => 
         Collection(id, publisher_id, ctype_id, pkgmap_id, description, policy, created, updated, deposits)
     }
@@ -73,13 +80,17 @@ object Collection {
     }
   }
 
-  def create(publisher_id: Long, ctype_id: Long, pkgmap_id: Long, description: String, policy: String) {
+  def create(publisher_id: Long, ctype_id: Long, pkgmap_id: Long, description: String, policy: String) = {
     val created = new Date
     val updated = created
 		DB.withConnection { implicit c =>
 			SQL("insert into collection (publisher_id, ctype_id, pkgmap_id, description, policy, created, updated, deposits) values ({publisher_id}, {ctype_id}, {pkgmap_id}, {description}, {policy}, {created}, {updated}, {deposits})")
-      .on('publisher_id -> publisher_id, 'ctype_id -> ctype_id, 'pkgmap_id -> pkgmap_id, 'description -> description, 'policy -> policy, 'created -> created, 'updated -> updated, 'deposits -> 0).executeUpdate()
+      .on('publisher_id -> publisher_id, 'ctype_id -> ctype_id, 'pkgmap_id -> pkgmap_id, 'description -> description, 'policy -> policy, 'created -> created, 'updated -> updated, 'deposits -> 0).executeInsert()
 		}
+  }
+
+  def make(publisher_id: Long, ctype_id: Long, pkgmap_id: Long, description: String, policy: String): Collection = {
+    findById(create(publisher_id, ctype_id, pkgmap_id, description, policy).get).get
   }
 
   def delete(id: Long) {

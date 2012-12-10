@@ -42,7 +42,7 @@ object Feed extends Controller {
    */
   private def atomFeed(topic: Topic, host: String, uri: String) =
     <feed xmlns="http://www.w3.org/2005/Atom">
-      <title>{topic.title}</title>
+      <title>{topic.name}</title>
       <link href={"http://" + host}/>
       <link rel="self" href={"http://" + host + uri} />
       <updated>{iso8601.print(topic.created.getTime())}</updated>
@@ -61,7 +61,7 @@ object Feed extends Controller {
             </author>
           }
           <summary>
-            {item.metadataValue("title")} {item.metadataValues("authors").mkString(",")} {topic.title}
+            {item.metadataValue("title")} {item.metadataValues("authors").mkString(",")} {topic.name}
           </summary>
         </entry>
       }

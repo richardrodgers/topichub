@@ -20,7 +20,7 @@ object Finder {
 
   val finder = {
       get[Long]("id") ~ get[Long]("scheme_id") ~ get[String]("description") ~ get[String]("cardinality") ~ 
-      get[String]("format") ~ get[String]("idKey") ~ get[String]("idLabel") ~ get[String]("author") ~ get[Date]("created") map {
+      get[String]("format") ~ get[String]("id_key") ~ get[String]("id_label") ~ get[String]("author") ~ get[Date]("created") map {
       case id ~ scheme_id ~ description ~ cardinality ~ format ~ idKey ~ idLabel ~ author ~ created => 
         Finder(id, scheme_id, description, cardinality, format, idKey, idLabel, author, created)
     }
@@ -31,7 +31,7 @@ object Finder {
 		DB.withConnection { implicit c =>
 			SQL(
         """
-        insert into finder (scheme_id, description, cardinality, format, idKey, idLabel, author, created)
+        insert into finder (scheme_id, description, cardinality, format, id_key, id_label, author, created)
         values ({scheme_id}, {description}, {cardinality}, {format}, {idKey}, {idLabel}, {author}, {created})
         """
       ).on('scheme_id -> scheme_id, 'description -> description, 'cardinality -> cardinality, 'format -> format, 'idKey ->idKey, 'idLabel -> idLabel, 'author -> author, 'created -> new Date)

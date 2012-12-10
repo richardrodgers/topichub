@@ -21,18 +21,18 @@ import anorm.SqlRow
   * @author richardrodgers
   */
 
-case class Publisher(id: Long, pubId: String, name: String, description: String, role: String,
-                     home: Option[String], logo: Option[String], created: Date) {
+case class Publisher(id: Long, userId: Long, pubId: String, name: String, description: String, category: String,
+                     status: String, link: Option[String], logo: Option[String], created: Date) {
 
   def collectionCount = {
-     DB.withConnection { implicit c =>
+    DB.withConnection { implicit c =>
       val count = SQL("select count(*) as c from collection where publisher_id = {id}").on('id -> id).apply.head
       count[Long]("c")
     }
   }
 
   def collections = {
-     DB.withConnection { implicit c =>
+    DB.withConnection { implicit c =>
       SQL("select * from collection where publisher_id = {pubId}").on('pubId -> id).as(Collection.coll *)
     }
   }
@@ -53,10 +53,10 @@ case class Publisher(id: Long, pubId: String, name: String, description: String,
 object Publisher {
 
   val pub = {
-    get[Long]("id") ~ get[String]("pubId") ~ get[String]("name") ~ get[String]("description") ~ get[String]("role") ~
-    get[Option[String]]("home") ~ get[Option[String]]("logo") ~ get[Date]("created") map {
-      case id ~ pubId ~ name ~ description ~ role ~ home ~ logo ~ created => 
-        Publisher(id, pubId, name, description, role, home, logo, created)
+    get[Long]("id") ~ get[Long]("user_id") ~ get[String]("pub_id") ~ get[String]("name") ~ get[String]("description") ~ get[String]("category") ~
+    get[String]("status") ~ get[Option[String]]("link") ~ get[Option[String]]("logo") ~ get[Date]("created") map {
+      case id ~ userId ~ pubId ~ name ~ description ~ category ~ status ~ link ~ logo ~ created => 
+        Publisher(id, userId, pubId, name, description, category, status, link, logo, created)
     }
   }
 
@@ -72,10 +72,36 @@ object Publisher {
     }
   }
 
-  def create(pubId: String, name: String, description: String, role: String, home: Option[String], logo: Option[String]) {
+  def categories = {
     DB.withConnection { implicit c =>
-      SQL("insert into publisher (pubId, name, description, role, home, logo, created) values ({pubId}, {name}, {description}, {role}, {home}, {logo}, {created})")
-      .on('pubId -> pubId, 'name -> name, 'description -> description, 'role -> role, 'home -> home, 'logo -> logo, 'created -> new Date).executeUpdate()
+      SQL("select distinct category from publisher").as(scalar[String] *)
+    }
+  }
+
+  def categoryCount(category: String) = {
+    DB.withConnection { implicit c =>
+      val count = SQL("select count(*) as c from publisher where category = {category}").on('category -> category).apply.head
+      count[Long]("c")
+    }
+  }
+
+  def inCategory(category: String, page: Int) = {
+    val offset = page * 10
+    DB.withConnection { implicit c =>
+      SQL(
+        """
+          select * from publisher where category = {category}
+          order by created desc
+          limit 10 offset {offset}
+        """
+      ).on('category -> category, 'offset -> offset).as(pub *)
+    }  
+  }
+
+  def create(userId: Long, pubId: String, name: String, description: String, category: String, status: String, link: Option[String], logo: Option[String]) {
+    DB.withConnection { implicit c =>
+      SQL("insert into publisher (user_id, pub_id, name, description, category, status, link, logo, created) values ({user_id}, {pubId}, {name}, {description}, {category}, {status}, {link}, {logo}, {created})")
+      .on('user_id -> userId, 'pubId -> pubId, 'name -> name, 'description -> description, 'category -> category, 'status -> status, 'link -> link, 'logo -> logo, 'created -> new Date).executeInsert()
     }
   }
 

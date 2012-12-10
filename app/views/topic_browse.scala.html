@@ -14,7 +14,7 @@
      @pagination
      <ul>
        @topics.map { topic =>
-         <li><a href="@routes.Application.topic(topic.id)">@topic.topicId</a> @topic.title</li>
+         <li><a href="@routes.Application.topic(topic.id)">@topic.topicId</a> @topic.name</li>
        }
      </ul>
      @pagination

@@ -1,0 +1,21 @@
+@(value: String, pubs: List[Publisher], description: String, page: Int, total: Long)
+
+@pagination = {
+   <span>
+     <a href="@routes.Application.publisherBrowse("category", value, page - 1)">&laquo; Previous</a>
+     Showing @(page * 10 + 1) - @(page * 10 + pubs.length) of @total
+     <a href="@routes.Application.publisherBrowse("category", value, page + 1)">Next &raquo;</a>
+   </span>	
+}
+
+@main("Publisher Browse -  TopicHub") {
+     <h2>Browse Publishers by Category</h2>
+     <h3>@description</h3>
+     @pagination
+     <ul>
+       @pubs.map { pub =>
+         <li><a href="@routes.Application.publisher(pub.id)">@pub.name</a></li>
+       }
+     </ul>
+     @pagination
+}

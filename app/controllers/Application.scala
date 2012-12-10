@@ -82,7 +82,7 @@ object Application extends Controller {
 
   private def itemBrowseTopic(id: Long, page: Int) = {
     Topic.findById(id).map( topic => 
-      Ok(views.html.item_browse(id, topic.pagedItems(page, 10), "topic", topic.title, page, topic.itemCount))
+      Ok(views.html.item_browse(id, topic.pagedItems(page, 10), "topic", topic.name, page, topic.itemCount))
     ).getOrElse(NotFound("No such topic"))
   }
 
@@ -140,7 +140,7 @@ object Application extends Controller {
   def itemTransfer(id: Long, mode: String) = Action { implicit request =>
     Item.findById(id).map( item => {
       val sub = Subscriber.findByContact(request.session.get("email").get).get
-      Ok(views.html.item_transfer(id, sub.targetsWith(mode)))
+      Ok(views.html.item_transfer(id, sub.channelsWith(mode)))
     }
     ).getOrElse(NotFound("No such item"))
   }
@@ -174,18 +174,20 @@ object Application extends Controller {
 
   def topicSubscribe(id: Long, mode: String) = Action { implicit request =>
     Topic.findById(id).map( t => {
-      val sub = Subscriber.findByContact(request.session.get("email").get).get
-      Ok(views.html.topic_subscribe(id, sub.targetsWith(mode)))
+      val user = User.findByName(session.get("username").get).get
+      val sub = Subscriber.findByUserId(user.id).get
+      Ok(views.html.topic_subscribe(id, sub.channelsWith(mode)))
     }
     ).getOrElse(NotFound("No such topic"))
   }
 
   def subscribe(id: Long) = Action { implicit request =>
     Topic.findById(id).map( t => {
-      val sub = Subscriber.findByContact(request.session.get("email").get).get
+      val user = User.findByName(session.get("username").get).get
+      val sub = Subscriber.findByUserId(user.id).get
       // create a subscription and pass to a conveyor
-      val targ_id = request.body.asFormUrlEncoded.get.get("target").get.head.toLong
-      conveyor ! Subscription.make(sub.id, targ_id, id, "all")
+      val channel_id = request.body.asFormUrlEncoded.get.get("channel").get.head.toLong
+      conveyor ! Subscription.make(sub.id, channel_id, id, "all")
       Ok(views.html.item_index(Publisher.all))
     }
     ).getOrElse(NotFound("No such topic"))
@@ -194,18 +196,20 @@ object Application extends Controller {
   val pubForm = Form(
   	mapping(
       "id" -> ignored(0L),
+      "userId" -> ignored(0L),
       "pubId" -> nonEmptyText,
       "name" -> nonEmptyText,
       "description" -> nonEmptyText,
-      "role" -> nonEmptyText,
-      "home" -> optional(text),
+      "category" -> nonEmptyText,
+      "status" -> ignored(""),
+      "link" -> optional(text),
       "logo" -> optional(text),
       "created" -> ignored(new Date)
     )(Publisher.apply)(Publisher.unapply)
   )
 
   def publishers = Action {
-  	Ok(views.html.pub_list(Publisher.all))
+  	Ok(views.html.publisher_index())
   }
 
   def newPublisher = Action {
@@ -214,7 +218,7 @@ object Application extends Controller {
 
   def publisher(id: Long) = Action {
     Publisher.findById(id).map( p => 
-      Ok(views.html.pub(p))
+      Ok(views.html.publisher(p))
     ).getOrElse(NotFound("No such publisher"))
   }
 
@@ -222,10 +226,22 @@ object Application extends Controller {
     pubForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_publisher(null, errors)),
       value => {
-        Publisher.create(value.pubId, value.name, value.description, value.role, value.home, value.logo)
+        val user = User.findByName(session.get("username").get).get
+        Publisher.create(user.id, value.pubId, value.name, value.description, value.category, value.status, value.link, value.logo)
         Redirect(routes.Application.publishers)
       }
     )
+  }
+
+  def publisherBrowse(filter: String, value: String, page: Int) = Action {
+    filter match {
+      case "category" => publisherBrowseCategory(value, page)
+      case _ => NotFound("No such filter")
+    }
+  }
+
+  def publisherBrowseCategory(value: String, page: Int) = {
+    Ok(views.html.publisher_browse(value, Publisher.inCategory(value, page), value, page, Publisher.categoryCount(value)))
   }
 
   val collForm = Form(
@@ -243,22 +259,26 @@ object Application extends Controller {
   )
 
   def newCollection(id: Long) = Action {
-     Publisher.findById(id).map( p => 
-        Ok(views.html.new_collection(p, collForm))
-      ).getOrElse(NotFound("No such publisher"))
+    Publisher.findById(id).map( pub => 
+      Ok(views.html.new_collection(pub, collForm))
+    ).getOrElse(NotFound("No such publisher"))
   }
 
   def createCollection(id: Long) = Action { implicit request =>
-    collForm.bindFromRequest.fold(
-      errors => {
-        val p = Publisher.findById(id).get
-        BadRequest(views.html.new_collection(p, errors))
-      },
-      value => {
-        Collection.create(id, value.ctype_id, value.pkgmap_id, value.description, value.policy)
-        Redirect(routes.Application.publisher(id))
-      }
-    )
+    val pub = Publisher.findById(id).get 
+      collForm.bindFromRequest.fold(
+        errors => BadRequest(views.html.new_collection(pub, errors)),
+        value => {
+          val coll = Collection.make(id, value.ctype_id, value.pkgmap_id, value.description, value.policy)
+          // also create an inbound channel for this collection - currently limited to SWORD
+          val chan = Channel.make("sword", "package", "inbound", pub.pubId + ":" + coll.description + " deposits", "user", "password", "/sword/collection/" + coll.id)
+          // make collection the channel owner
+          chan.setOwner("coll", coll.id)
+          // TODO - email publisher this channel info
+          Redirect(routes.Application.publisher(id))
+        }
+      )
+    //).getOrElse(NotFound("No such publisher"))
   }
 
   def itemUrl(id: Long) = {
@@ -296,7 +316,7 @@ object Application extends Controller {
    schemeForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_scheme(errors)),
       value => {
-        Scheme.create(value.schemeId, value.gentype, value.category, value.description, value.home, value.logo)
+        Scheme.create(value.schemeId, value.gentype, value.category, value.description, value.link, value.logo)
         Redirect(routes.Application.schemes)
       }
     )
@@ -363,7 +383,7 @@ object Application extends Controller {
     pkgmapForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_pkgmap(errors)),
       value => {
-        PackageMap.create(value.pkgmapId, value.description, value.swordurl)
+        PackageMap.create(value.pkgmapId, value.description, value.swordUrl)
         Redirect(routes.Application.pkgmaps)
       }
     )
@@ -535,11 +555,13 @@ object Application extends Controller {
   val subscriberForm = Form(
     mapping(
       "id" -> ignored(0L),
-      "userId" -> nonEmptyText,
-      "password" -> nonEmptyText,
-      "home" -> optional(text),
+      "user_id" -> ignored(0L),
+      "category" -> nonEmptyText,
+      "name" -> nonEmptyText,
+      "visibility" -> nonEmptyText,
+      "keywords" -> nonEmptyText,
+      "link" -> optional(text),
       "logo" -> optional(text),
-      "role" -> nonEmptyText,
       "contact" -> nonEmptyText,
       "swordService" -> nonEmptyText,
       "terms" -> nonEmptyText,
@@ -549,7 +571,7 @@ object Application extends Controller {
   )
 
   def subscribers = Action {
-    Ok(views.html.subscriber_index(Subscriber.all))
+    Ok(views.html.subscriber_index())
   }
 
   def subscriber(id: Long) = Action {
@@ -560,13 +582,13 @@ object Application extends Controller {
 
   def subscriberBrowse(filter: String, value: String, page: Int) = Action {
     filter match {
-      case "type" => subscriberBrowseType(value, page)
+      case "category" => subscriberBrowseCategory(value, page)
       case _ => NotFound("No such filter")
     }
   }
 
-  def subscriberBrowseType(value: String, page: Int) = {
-    Ok(views.html.subscriber_browse(value, Subscriber.inRole(value, page), value, page, Subscriber.roleCount(value)))
+  def subscriberBrowseCategory(value: String, page: Int) = {
+    Ok(views.html.subscriber_browse(value, Subscriber.inCategory(value, page), value, page, Subscriber.categoryCount(value)))
   }
 
   def newSubscriber = Action {
@@ -577,43 +599,46 @@ object Application extends Controller {
     subscriberForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_subscriber(errors)),
       value => {
-        Subscriber.create(value.userId, value.password, value.home, value.logo, value.role, value.contact, value.swordService, value.terms, value.backFile)
+        val user = User.findByName(session.get("username").get).get
+        Subscriber.create(user.id, value.category, value.name, value.visibility, value.keywords, value.link, value.logo, value.contact, value.swordService, value.terms, value.backFile)
         Redirect(routes.Application.subscribers)
       }
     )
   }
 
-  val targetForm = Form(
+  val channelForm = Form(
     mapping(
       "id" -> ignored(0L),
-      "subscriber_id" -> ignored(1L),
-      "protocol" -> nonEmptyText,
-      "load" -> nonEmptyText,
+      "protocol" -> ignored("sword"),
+      "mode" -> nonEmptyText,
+      "direction" -> ignored("outbound"),
       "description" -> nonEmptyText,
       "userId" -> nonEmptyText,
       "password" -> nonEmptyText,
-      "targetUrl" -> nonEmptyText,
+      "channelUrl" -> nonEmptyText,
       "created" -> ignored(new Date),
       "updated" -> ignored(new Date),
-      "tarnsfers" -> ignored(0)
-    )(Target.apply)(Target.unapply)
+      "transfers" -> ignored(0)
+    )(Channel.apply)(Channel.unapply)
   )
 
-  def target(id: Long) = Action {
-    Target.findById(id).map( t => 
-      Ok(views.html.target(t))
+  def channel(id: Long) = Action {
+    Channel.findById(id).map( c => 
+      Ok(views.html.channel(c))
     ).getOrElse(NotFound("No such subscriber destination"))
   }
 
-  def newTarget(sid: Long) = Action {
-    Ok(views.html.new_target(sid, targetForm))
+  def newChannel(sid: Long) = Action {
+    Ok(views.html.new_channel(sid, channelForm))
   }
 
-  def createTarget(sid: Long) = Action { implicit request =>
-    targetForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.new_target(sid, errors)),
+  def createChannel(sid: Long) = Action { implicit request =>
+    channelForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.new_channel(sid, errors)),
       value => {
-        Target.create(sid, value.protocol, value.load, value.description, value.userId, value.password, value.targetUrl)
+        val chan = Channel.make("sword", value.mode, "outbound", value.description, value.userId, value.password, value.channelUrl)
+        // make subscriber the channel owner
+        chan.setOwner("sub", sid)
         Redirect(routes.Application.subscriber(sid))
       }
     )
@@ -651,7 +676,7 @@ object Application extends Controller {
           "gentype"  -> toJson(s.gentype),
           "category" -> toJson(s.category),
           "description" -> toJson(s.description),
-          "home" -> toJson(s.home),
+          "link" -> toJson(s.link),
           "logo" -> toJson(s.logo),
           "finders" -> jsonFinders(s.id)
       )
@@ -689,7 +714,7 @@ object Application extends Controller {
     val msg = PackageMap.all.map( m =>
       Map("pkgmapId" -> toJson(m.pkgmapId),
           "description" -> toJson(m.description),
-          "swordurl" -> toJson(m.swordurl),
+          "swordUrl" -> toJson(m.swordUrl),
           "mappings" -> jsonPkgMappings(m)
       )
     )

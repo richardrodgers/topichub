@@ -43,15 +43,15 @@ case class Ctype(id: Long, ctypeId: String, description: String, logo: Option[St
 object Ctype {
 
   val ctype = {
-    get[Long]("id") ~ get[String]("ctypeId") ~ get[String]("description") ~ get[String]("logo") map {
+    get[Long]("id") ~ get[String]("ctype_id") ~ get[String]("description") ~ get[String]("logo") map {
       case id ~ ctypeId ~ description ~ logo => Ctype(id, ctypeId, description, Some(logo))
     }
   }
 
   def create(ctypeId: String, description: String, logo: Option[String]) {
 		DB.withConnection { implicit c =>
-			SQL("insert into ctype (ctypeId, description, logo) values ({ctypeId}, {description}, {logo})")
-      .on('ctypeId -> ctypeId, 'description -> description, 'logo  -> logo).executeUpdate()
+			SQL("insert into ctype (ctype_id, description, logo) values ({ctype_id}, {description}, {logo})")
+      .on('ctype_id -> ctypeId, 'description -> description, 'logo  -> logo).executeUpdate()
 		}
   }
 
@@ -69,7 +69,7 @@ object Ctype {
 
   def findByName(ctypeId: String): Option[Ctype] = {
       DB.withConnection { implicit c =>
-      SQL("select * from ctype where ctypeId = {ctypeId}").on('ctypeId -> ctypeId).as(ctype.singleOpt)
+      SQL("select * from ctype where ctype_id = {ctype_id}").on('ctype_id -> ctypeId).as(ctype.singleOpt)
     }  
   }
 

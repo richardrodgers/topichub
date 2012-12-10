@@ -1,0 +1,24 @@
+@()
+
+@main("Publishers -  TopicHub") {
+  <div class="container-fluid">
+  	<div class="row-fluid">
+      <div class="span4">
+      	<div class="well sidebar-nav">
+      		<ul class="nav nav-list">
+      			<li class="nav-header">Categories</li>
+      		  @for(cat <- Publisher.categories) {
+         	    <li><a href="@routes.Application.publisherBrowse("category", cat)">@cat</a> (@HubUtils.pluralize(Publisher.categoryCount(cat), "publisher"))</li>
+       			}
+      		</ul>
+      	</div>
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>(Re)publish your Content on TopicHub</h2>
+          <p>Secondary use of content has created much more complex environment for publishers, where funding mandates, institutional policies, etc often mean making copies (and related metadata) available to a number of parties. Put the content on TopicHub, and all these coordination costs disappear, since it functions as a one-stop location for any consumer of content, and you don't need to track or manage who they are: they interact with the hub, not you. Browse publishers and their collections at left.
+        </div>
+      </div>
+    </div>
+  </div>
+}

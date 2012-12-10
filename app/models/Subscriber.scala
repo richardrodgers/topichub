@@ -14,25 +14,34 @@ import anorm.~
 import anorm.SQL
 
 /**
-  * Subscriber is an entity that receives notificatons and/or content deliveries based on hub-registered intents.
+  * Subscriber is an entity that receives notificatons and/or content deliveries based on hub-registered intents
+  * known as subscriptions.
   *
   * @author richardrodgers
   */
 
-case class Subscriber(id: Long, userId: String, password: String, home: Option[String], logo: Option[String], role: String,
-                      contact: String, swordService: String, terms: String, backFile: String, created: Date) {
+case class Subscriber(id: Long, user_id: Long, category: String, name: String, visibility: String, keywords: String,
+                      link: Option[String], logo: Option[String], contact: String, swordService: String,
+                      terms: String, backFile: String, created: Date) {
 
-  def targets = {
+  def channels = {
     DB.withConnection { implicit c =>
-      SQL("select * from target where target.subscriber_id = {id}")
-      .on('id -> id).as(Target.target *)
+      SQL("select channel.* from channel, channelowner where channel.id = channelowner.channel_id and channelowner.owner_type = 'sub' and channelowner.owner_id = {id}")
+      .on('id -> id).as(Channel.channel *)
     }
   }
 
-  def targetsWith(mode: String) = {
+  def channelsWith(mode: String) = {
     DB.withConnection { implicit c =>
-      SQL("select * from target where target.subscriber_id = {id} and target.load = {load}")
-      .on('id -> id, 'load -> mode).as(Target.target *)
+      SQL("select channel.* from channel, channelowner where channel.id = channelowner.channel_id and channelowner.owner_type = 'sub' and channelowner.owner_id = {id} and channel.mode = {mode}")
+      .on('id -> id, 'mode -> mode).as(Channel.channel *)
+    }
+  }
+
+  def subscriptionCount = {
+    DB.withConnection { implicit c =>
+      val count = SQL("select count(*) as c from subscription where subscriber_id = {id}").on('id -> id).apply.head
+      count[Long]("c")
     }
   }
 }
@@ -40,10 +49,11 @@ case class Subscriber(id: Long, userId: String, password: String, home: Option[S
 object Subscriber {
 
   val subscriber = {
-    get[Long]("id") ~ get[String]("userId") ~ get[String]("password") ~ get[String]("home") ~ get[String]("logo") ~ get[String]("role") ~
-    get[String]("contact") ~ get[String]("swordService") ~ get[String]("terms") ~ get[String]("backfile") ~ get[Date]("created") map {
-      case id ~ userId ~ password ~ home ~ logo ~ role ~ contact ~ swordService ~ terms ~ backFile ~ created => 
-      Subscriber(id, userId, password, Some(home), Some(logo), role, contact, swordService, terms, backFile, created)
+    get[Long]("id") ~ get[Long]("user_id") ~ get[String]("category") ~ get[String]("name") ~ get[String]("visibility") ~
+    get[String]("keywords") ~  get[String]("link") ~ get[String]("logo") ~ get[String]("contact") ~ get[String]("sword_service") ~ 
+    get[String]("terms") ~ get[String]("back_file") ~ get[Date]("created") map {
+      case id ~ user_id ~ category ~ name ~ visibility ~ keywords ~ link ~ logo ~ contact ~ swordService ~ terms ~ backFile ~ created => 
+      Subscriber(id, user_id, category, name, visibility, keywords, Some(link), Some(logo), contact, swordService, terms, backFile, created)
     }
   }
 
@@ -60,29 +70,29 @@ object Subscriber {
     }
   }
 
-  def roles = {
+  def categories = {
     DB.withConnection { implicit c =>
-      SQL("select distinct role from subscriber").as(scalar[String] *)
+      SQL("select distinct category from subscriber").as(scalar[String] *)
     }
   }
 
-  def roleCount(role: String) = {
+  def categoryCount(category: String) = {
     DB.withConnection { implicit c =>
-      val count = SQL("select count(*) as c from subscriber where role = {role}").on('role -> role).apply.head
+      val count = SQL("select count(*) as c from subscriber where category = {category}").on('category -> category).apply.head
       count[Long]("c")
     }
   }
 
-  def inRole(role: String, page: Int) = {
+  def inCategory(category: String, page: Int) = {
     val offset = page * 10
     DB.withConnection { implicit c =>
       SQL(
         """
-          select * from subscriber where role = {role}
+          select * from subscriber where category = {category}
           order by created desc
           limit 10 offset {offset}
         """
-      ).on('role -> role, 'offset -> offset).as(subscriber *)
+      ).on('category -> category, 'offset -> offset).as(subscriber *)
     }  
   }
 
@@ -92,23 +102,23 @@ object Subscriber {
     }
   }
 
+  def findByUserId(user_id: Long): Option[Subscriber] = {
+    DB.withConnection { implicit c =>
+      SQL("select * from subscriber where user_id = {user_id}").on('user_id -> user_id).as(subscriber.singleOpt)
+    }
+  }
+
   def findByContact(contact: String): Option[Subscriber] = {
     DB.withConnection { implicit c =>
       SQL("select * from subscriber where contact = {contact}").on('contact -> contact).as(subscriber.singleOpt)
     }
   }
 
-   def authenticate(email: String, password: String): Option[Subscriber] = {
-    DB.withConnection { implicit c =>
-      SQL("select * from subscriber where contact = {email} and password = {password}").on('email -> email, 'password -> password).as(subscriber.singleOpt)
-    }
-  }
-
-  def create(userId: String, password: String, home: Option[String], logo: Option[String], role: String, contact: String,
-             swordService: String, terms: String, backFile: String) {
+  def create(user_id: Long, category: String, name: String, visibility: String, keywords: String, link: Option[String],
+             logo: Option[String], contact: String, swordService: String, terms: String, backFile: String) {
 		DB.withConnection { implicit c =>
-			SQL("insert into subscriber (userId, password, home, logo, role, contact, swordService, terms, backFile, created) values ({userId}, {password}, {home}, {logo}, {role}, {contact}, {swordService}, {terms}, {backFile}, {created})")
-      .on('userId -> userId, 'password -> password, 'home -> home, 'logo -> logo, 'role -> role, 'contact -> contact, 'swordService -> swordService, 'terms -> terms, 'backFile -> backFile, 'created -> new Date).executeUpdate()
+			SQL("insert into subscriber (user_id, category, name, visibility, keywords, link, logo, contact, sword_service, terms, back_file, created) values ({user_id}, {category}, {name}, {visibility}, {keywords}, {link}, {logo}, {contact}, {swordService}, {terms}, {backFile}, {created})")
+      .on('user_id -> user_id, 'category -> category, 'name -> name, 'visibility -> visibility, 'keywords -> keywords, 'link -> link, 'logo -> logo, 'contact -> contact, 'swordService -> swordService, 'terms -> terms, 'backFile -> backFile, 'created -> new Date).executeUpdate()
 		}
   }
 

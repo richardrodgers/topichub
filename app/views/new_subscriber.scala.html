@@ -7,11 +7,12 @@
      <h2>Add a new subscriber</h2> 
     @form(routes.Application.createSubscriber) {
         
-        @inputText(subForm("userId"))
-        @inputText(subForm("password")) 
-        @inputText(subForm("home"))
+        @inputText(subForm("category"))
+        @inputText(subForm("name")) 
+        @inputText(subForm("visibility"))
+        @inputText(subForm("keywords")) 
+        @inputText(subForm("link"))
         @inputText(subForm("logo")) 
-        @inputText(subForm("role"))  
         @inputText(subForm("contact"))  
         @inputText(subForm("swordService")) 
         @inputText(subForm("terms"))

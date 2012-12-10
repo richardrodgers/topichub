@@ -14,13 +14,14 @@ import anorm.~
 import anorm.SQL
 
 /**
-  * Subscription is an association between a subscriber target and a topic,
-  * thr fulfillment of which is a transfer of one or more items to the target
+  * Subscription is an association between a subscriber channel and a topic,
+  * the fulfillment of which is a transfer of one or more items or notifications
+  * through the channel
   *
   * @author richardrodgers
   */
 
-case class Subscription(id: Long, subscriber_id: Long, target_id: Long, topic_id: Long,
+case class Subscription(id: Long, subscriber_id: Long, channel_id: Long, topic_id: Long,
                         policy: String = "all", created: Date, updated: Date, transfers: Int) {
 
   def recordTransfer {
@@ -35,10 +36,10 @@ case class Subscription(id: Long, subscriber_id: Long, target_id: Long, topic_id
 object Subscription {
 
   val subscription = {
-    get[Long]("id") ~ get[Long]("subscriber_id") ~ get[Long]("target_id") ~ get[Long]("topic_id") ~
+    get[Long]("id") ~ get[Long]("subscriber_id") ~ get[Long]("channel_id") ~ get[Long]("topic_id") ~
     get[String]("policy") ~ get[Date]("created") ~ get[Date]("updated") ~ get[Int]("transfers") map {
-      case id ~ subscriber_id ~ target_id ~ topic_id ~ policy ~ created ~ updated ~ transfers => 
-        Subscription(id, subscriber_id, target_id, topic_id, policy, created, updated, transfers)
+      case id ~ subscriber_id ~ channel_id ~ topic_id ~ policy ~ created ~ updated ~ transfers => 
+        Subscription(id, subscriber_id, channel_id, topic_id, policy, created, updated, transfers)
     }
   }
 
@@ -48,22 +49,23 @@ object Subscription {
     }
   }
 
-  def findByTopicAndTarget(topic_id: Long, target_id: Long): List[Subscription] = {
+  def findByTopicAndChannel(topic_id: Long, channel_id: Long): List[Subscription] = {
     DB.withConnection { implicit c =>
-      SQL("select * from subscription where topic_id = {topic_id} and target_id = {target_id}").on('topic_id -> topic_id, 'target_id -> target_id).as(subscription *)
+      SQL("select * from subscription where topic_id = {topic_id} and channel_id = {channel_id}")
+      .on('topic_id -> topic_id, 'channel_id -> channel_id).as(subscription *)
     }
   }
 
-  def create(subscriber_id: Long, target_id: Long, topic_id: Long, policy: String) {
+  def create(subscriber_id: Long, channel_id: Long, topic_id: Long, policy: String) {
 		DB.withConnection { implicit c =>
-			SQL("insert into subscription (subscriber_id, target_id, topic_id, policy, created, updated, transfers) values ({subscriber_id}, {target_id}, {topic_id}, {policy}, {created}, {updated}, {transfers})")
-      .on('subscriber_id -> subscriber_id, 'target_id -> target_id, 'topic_id -> topic_id, 'policy -> policy, 'created -> new Date, 'updated -> new Date, 'transfers -> 0).executeUpdate()
+			SQL("insert into subscription (subscriber_id, channel_id, topic_id, policy, created, updated, transfers) values ({subscriber_id}, {channel_id}, {topic_id}, {policy}, {created}, {updated}, {transfers})")
+      .on('subscriber_id -> subscriber_id, 'channel_id -> channel_id, 'topic_id -> topic_id, 'policy -> policy, 'created -> new Date, 'updated -> new Date, 'transfers -> 0).executeUpdate()
 		}
   }
 
-  def make(subscriber_id: Long, target_id: Long, topic_id: Long, policy: String): Subscription = {
-    create(subscriber_id, target_id, topic_id, policy)
-    findByTopicAndTarget(topic_id, target_id).head
+  def make(subscriber_id: Long, channel_id: Long, topic_id: Long, policy: String): Subscription = {
+    create(subscriber_id, channel_id, topic_id, policy)
+    findByTopicAndChannel(topic_id, channel_id).head
   }
 
   def delete(id: Long) {

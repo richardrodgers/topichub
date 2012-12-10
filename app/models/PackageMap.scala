@@ -17,7 +17,7 @@ import anorm.SQL
   * @author richardrodgers
   */
 
-case class PackageMap(id: Long, pkgmapId: String, description: String, swordurl: Option[String]) {
+case class PackageMap(id: Long, pkgmapId: String, description: String, swordUrl: Option[String]) {
 
   def addMapping(scheme_id: Long, source: String, format: String, rank: Int) {
     DB.withConnection { implicit c =>
@@ -51,15 +51,15 @@ case class PackageMap(id: Long, pkgmapId: String, description: String, swordurl:
 object PackageMap {
 
   val pkgmap = {
-    get[Long]("id") ~ get[String]("pkgmapId") ~ get[String]("description") ~ get[String]("swordurl") map {
-      case id ~ pkgmapId ~ description ~ swordurl => PackageMap(id, pkgmapId, description, Some(swordurl))
+    get[Long]("id") ~ get[String]("pkgmap_id") ~ get[String]("description") ~ get[String]("sword_url") map {
+      case id ~ pkgmapId ~ description ~ swordUrl => PackageMap(id, pkgmapId, description, Some(swordUrl))
     }
   }
 
-  def create(pkgmapId: String, description: String, swordurl: Option[String]) {
+  def create(pkgmapId: String, description: String, swordUrl: Option[String]) {
 		DB.withConnection { implicit c =>
-			SQL("insert into pkgmap (pkgmapId, description, swordurl) values ({pkgmapId}, {description}, {swordurl})")
-      .on('pkgmapId -> pkgmapId, 'description -> description, 'swordurl  -> swordurl).executeUpdate()
+			SQL("insert into pkgmap (pkgmap_id, description, sword_url) values ({pkgmapId}, {description}, {swordUrl})")
+      .on('pkgmapId -> pkgmapId, 'description -> description, 'swordUrl  -> swordUrl).executeUpdate()
 		}
   }
 
@@ -77,7 +77,7 @@ object PackageMap {
 
   def findByName(pkgmapId: String): Option[PackageMap] = {
       DB.withConnection { implicit c =>
-      SQL("select * from pkgmap where pkgmapId = {pkgmapId}").on('pkgmapId -> pkgmapId).as(pkgmap.singleOpt)
+      SQL("select * from pkgmap where pkgmap_id = {pkgmapId}").on('pkgmapId -> pkgmapId).as(pkgmap.singleOpt)
     }  
   }
 

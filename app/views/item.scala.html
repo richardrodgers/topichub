@@ -1,9 +1,9 @@
 @(item: Item)
 
 @main("Item - TopicHub") {
-    <div class="hero-unit">
-     <h2>@item.metadataValue("title")</h2>
-     <p>@item.metadataValues("author").mkString("; ")</p>
+    <div itemscope itemtype="http://schema.org/Article" class="hero-unit">
+     <h2 itemprop="name">@item.metadataValue("title")</h2>
+     <p itemprop="author">@item.metadataValues("author").mkString("; ")</p>
      <p>@item.metadataValue("citation")</p>
      <p>@HubUtils.pluralize(item.transfers, "transfer") since @HubUtils.fmtDate(item.created). Most recent @HubUtils.fmtDate(item.updated)</p>
      <p>
@@ -25,7 +25,7 @@
          <p>@Scheme.findByName(sc._1).get.description</p>
          <ul>
           @sc._2.map { tp =>
-            <li><a href="@routes.Application.topic(tp.id)">@tp.topicId</a>: @tp.title</li>
+            <li><a href="@routes.Application.topic(tp.id)">@tp.topicId</a>: @tp.name</li>
           }
          </ul>
        </div>

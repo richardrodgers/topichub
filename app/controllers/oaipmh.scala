@@ -144,7 +144,7 @@ object OAI extends Controller {
       { for (topic <- Topic.all.filter(_.scheme_id != metaSchemeId)) yield
         <set>
           <setSpec>{cache.schemeId(topic.scheme_id)}:{topic.topicId}</setSpec>
-          <setName>{topic.title}</setName>
+          <setName>{topic.name}</setName>
         </set>
       }
     </ListSets>

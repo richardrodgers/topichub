@@ -1,0 +1,18 @@
+@(subscriber_id: Long, channelForm: Form[Channel])
+
+@import helper._
+
+@main("New Destination - TopicHub") {
+
+    <h2>Add a new destination</h2> 
+    @form(routes.Application.createChannel(subscriber_id)) {
+        
+        @select(channelForm("mode"), options(Map("package" -> "package", "alert" -> "alert")))
+        @inputText(channelForm("description"))
+        @inputText(channelForm("userId"))
+        @inputText(channelForm("password")) 
+        @inputText(channelForm("channelUrl")) 
+        
+        <input type="submit" value="Create">      
+    }
+}

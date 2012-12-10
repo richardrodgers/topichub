@@ -1,0 +1,14 @@
+@(channel: Channel)
+
+@main("Destination - TopicHub") {
+
+     <h2>Destination</h2>
+     <p>@channel.description</p>
+
+     <h3>Subscriptions</h3>
+     <ul>
+     @channel.subscriptions.map { sub =>
+			 <li>Topic: <a href="@routes.Application.subscription(sub.id)">@Topic.findById(sub.topic_id).get.name</a></li>
+     }
+     </ul>
+}

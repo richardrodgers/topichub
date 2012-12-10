@@ -3,14 +3,14 @@
 @main("Topic - TopicHub") {
 
 		 <div class="hero-unit">
-		 	 <h2>@topic.title  <a href="@routes.Feed.topicFeed(topic.scheme.get.schemeId,topic.topicId)"><img src="@routes.Assets.at("images/feed-icon-28X28.png")"/></a></h2>
+		 	 <h2>@topic.name  <a href="@routes.Feed.topicFeed(topic.scheme.get.schemeId,topic.topicId)"><img src="@routes.Assets.at("images/feed-icon-28X28.png")"/></a></h2>
        <h3><a href="@routes.Application.scheme(topic.scheme.get.id)">@topic.scheme.get.schemeId</a>: @topic.topicId</h3>
        <p>Browse all topics in scheme: <a href="@routes.Application.topicBrowse(topic.scheme_id)">@topic.scheme.get.description</a></p>
        <p>@HubUtils.pluralize(topic.itemCount, "article")</p>
        <p>@HubUtils.pluralize(topic.subscriptionCount, "subscriber")</p>
        <p>Added @HubUtils.fmtDate(topic.created) @HubUtils.pluralize(topic.transfers, "transfer") - latest @HubUtils.fmtDate(topic.updated)</p>
        <span>
-             <a href="@routes.Application.topicSubscribe(topic.id, "full")" class="btn btn-primary btn-large">Subscribe &raquo;</a>
+             <a href="@routes.Application.topicSubscribe(topic.id, "package")" class="btn btn-primary btn-large">Subscribe &raquo;</a>
              <a href="@routes.Application.topicSubscribe(topic.id, "alert")" class="btn btn-primary btn-large pull-right">Notify Me &raquo;</a>
        </span>
      </div>

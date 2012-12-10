@@ -2,19 +2,19 @@
 
 @pagination = {
    <span>
-     <a href="@routes.Application.subscriberBrowse("type", value, page - 1)">&laquo; Previous</a>
+     <a href="@routes.Application.subscriberBrowse("category", value, page - 1)">&laquo; Previous</a>
      Showing @(page * 10 + 1) - @(page * 10 + subs.length) of @total
-     <a href="@routes.Application.subscriberBrowse("type", value, page + 1)">Next &raquo;</a>
+     <a href="@routes.Application.subscriberBrowse("category", value, page + 1)">Next &raquo;</a>
    </span>	
 }
 
 @main("Subscriber Browse -  TopicHub") {
-     <h2>Browse Subscribers by Type</h2>
+     <h2>Browse Subscribers by Category</h2>
      <h3>@description</h3>
      @pagination
      <ul>
        @subs.map { sub =>
-         <li><a href="@routes.Application.subscriber(sub.id)">@sub.userId</a> @sub.userId</li>
+         <li><a href="@routes.Application.subscriber(sub.id)">@sub.name</a></li>
        }
      </ul>
      @pagination

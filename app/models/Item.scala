@@ -15,6 +15,13 @@ import anorm.SQL
 import anorm.SimpleSql
 import anorm.Row
 
+/** Item represents a distinct content pacakge, typically containing
+  * a prinary artifcat, and metadata or other auxillary files. While opaque
+  * in the data model, the PackageMap entity is used to characterize it.
+  *
+  * @author richardrodgers
+  */
+
 case class Item(id: Long, collection_id: Long, ctype_id: Long, itemId: String,
                 created: Date, updated: Date, transfers: Int) {
 
@@ -75,17 +82,17 @@ case class Item(id: Long, collection_id: Long, ctype_id: Long, itemId: String,
 object Item {
 
   val item = {
-    get[Long]("id") ~ get[Long]("collection_id") ~ get[Long]("ctype_id") ~ get[String]("itemId") ~
+    get[Long]("id") ~ get[Long]("collection_id") ~ get[Long]("ctype_id") ~ get[String]("item_id") ~
     get[Date]("created") ~ get[Date]("updated") ~ get[Int]("transfers") map {
       case id ~ collection_id ~ ctype_id ~ itemId ~ created ~ updated ~ transfers => 
         Item(id, collection_id, ctype_id, itemId, created, updated, transfers)
     }
   }
 
-  def create(collection_id: Long, ctype_id: Long, itemId: String) {
+  def create(collection_id: Long, ctype_id: Long, itemId: String) = {
 		DB.withConnection { implicit c =>
-			SQL("insert into item (collection_id, ctype_id, itemId, created, updated, transfers) values ({collection_id}, {ctype_id}, {itemId}, {created}, {updated}, {transfers})")
-      .on('collection_id -> collection_id, 'ctype_id -> ctype_id, 'itemId -> itemId, 'created -> new Date, 'updated -> new Date, 'transfers -> 0).executeUpdate()
+			SQL("insert into item (collection_id, ctype_id, item_id, created, updated, transfers) values ({collection_id}, {ctype_id}, {itemId}, {created}, {updated}, {transfers})")
+      .on('collection_id -> collection_id, 'ctype_id -> ctype_id, 'itemId -> itemId, 'created -> new Date, 'updated -> new Date, 'transfers -> 0).executeInsert()
 		}
   }
 
@@ -134,7 +141,7 @@ object Item {
 
   def findByItemId(itemId: String): Option[Item] = {
    DB.withConnection { implicit c =>
-      SQL("select * from item where itemId = {itemId}").on('itemId -> itemId).as(item.singleOpt)
+      SQL("select * from item where item_id = {itemId}").on('itemId -> itemId).as(item.singleOpt)
     }
   }
 

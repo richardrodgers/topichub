@@ -1,4 +1,4 @@
-@(id: Long, targets: List[Target])
+@(id: Long, channels: List[Channel])
 
 @import helper._
 
@@ -6,8 +6,8 @@
 
     <h2>Select a destination:</h2> 
     <form action="@routes.Application.subscribe(id)" method="POST">
-    @targets.map { target =>
-        <input type="radio" name="target" value="@target.id"/>&nbsp@target.description<br>
+    @channels.map { channel =>
+        <input type="radio" name="channel" value="@channel.id"/>&nbsp@channel.description<br>
     } 
     <input type="submit" value="Subscribe">
     </form> 

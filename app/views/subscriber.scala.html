@@ -2,13 +2,22 @@
 
 @main("Subscriber - TopicHub") {
 
-     <h2>Subscriber @sub.userId</h2>
-
+  	 <div class="hero-unit">
+  	 <h3>:: @sub.category ::</h3>
+     <h2>@sub.name</h2>
+     @if(! sub.link.isEmpty) {
+       <a href="@sub.link">site</a>
+     }
+     @if(! sub.logo.isEmpty) {
+       <img src="@sub.logo">
+     }
+     <p>Added @HubUtils.fmtDate(sub.created)  @HubUtils.pluralize(sub.subscriptionCount, "subscription")</p>
      <h3>Destinations</h3>
      <ul>
-     	  @sub.targets.map { targ =>
-     	    <li><a href="@routes.Application.target(targ.id)">@targ.description</a></li>
+     	  @sub.channels.map { chan =>
+     	    <li><a href="@routes.Application.channel(chan.id)">@chan.description</a></li>
      	  }
      </ul>
-     <p><a class="btn btn-primary btn-large" href="@routes.Application.newTarget(sub.id)">New Destination</a></p>
+     <p><a class="btn btn-primary btn-large" href="@routes.Application.newChannel(sub.id)">New Destination</a></p>
+   </div>
 }

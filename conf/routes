@@ -8,6 +8,7 @@ GET     /                           controllers.Application.index
 
 # Publisher pages
 GET     /publishers                 controllers.Application.publishers
+GET     /publishers/browse          controllers.Application.publisherBrowse(filter: String, value: String, page: Int ?= 0)
 GET     /publisher/:id              controllers.Application.publisher(id: Long)
 GET     /publishers/create          controllers.Application.newPublisher
 GET     /publisher/:id/create       controllers.Application.newCollection(id: Long)
@@ -67,22 +68,25 @@ GET     /subscribers                controllers.Application.subscribers
 GET     /subscribers/browse         controllers.Application.subscriberBrowse(filter: String, value: String, page: Int ?= 0)
 GET     /subscribers/create         controllers.Application.newSubscriber
 GET     /subscriber/:id             controllers.Application.subscriber(id: Long)
-GET     /target/:id                 controllers.Application.target(id: Long)
+GET     /channel/:id                controllers.Application.channel(id: Long)
 GET     /subscription/:id           controllers.Application.subscription(id: Long)
-GET     /targets/:sid/create        controllers.Application.newTarget(sid: Long)
+GET     /channels/:sid/create        controllers.Application.newChannel(sid: Long)
 POST    /subscribers                controllers.Application.createSubscriber
-POST    /subscriber/:sid/targets    controllers.Application.createTarget(sid: Long)
+POST    /subscriber/:sid/channels   controllers.Application.createChannel(sid: Long)
 
 # Search pages
 GET     /search                     controllers.Application.search
 
 # Authentication pages
 GET     /login                      controllers.Security.login
+GET     /logout                     controllers.Security.logout
 POST    /authenticate               controllers.Security.authenticate
+GET     /register                   controllers.Security.startregister
+POST    /register                   controllers.Security.register
 
 # SWORD services
 GET     /sword/servicedocument      controllers.SwordServer.serviceDocument
-POST    /sword/collection/:id       controllers.SwordServer.acceptDeposit(id: Long)
+POST    /sword/collection/:id       controllers.SwordServer.processDeposit(id: Long)
 
 # Atom Feed services
 GET     /feed/:scheme/:topicId      controllers.Feed.topicFeed(scheme: String, topicId: String)

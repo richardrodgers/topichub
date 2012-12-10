@@ -19,8 +19,8 @@ import anorm.SQL
   * @author richardrodgers
   */
 
-case class Topic(id: Long, scheme_id: Long, topicId: String, title: String,
-                 created: Date, updated: Date, transfers: Int) {
+case class Topic(id: Long, scheme_id: Long, topicId: String, name: String,
+                 link: Option[String], created: Date, updated: Date, transfers: Int) {
 
   def items = {
    DB.withConnection { implicit c =>
@@ -70,7 +70,7 @@ case class Topic(id: Long, scheme_id: Long, topicId: String, title: String,
   }
 
   def subscriptionCount = {
-     DB.withConnection { implicit c =>
+    DB.withConnection { implicit c =>
       val count = SQL("select count(*) as c from subscription where topic_id = {id}").on('id -> id).apply.head
       count[Long]("c")
     }
@@ -90,15 +90,22 @@ case class Topic(id: Long, scheme_id: Long, topicId: String, title: String,
     }
   }
 
+  def setSetter(setterType: String, setter_id: Long) {
+    DB.withConnection { implicit c =>
+      SQL("insert into topicsetter (topic_id, setter_type, setter_id) values ({topic_id}, {setterType}, {setter_id})")
+      .on('topic_id -> id, 'setterType -> setterType, 'setter_id -> setter_id).executeInsert()
+    }
+  }
+
 }
 
 object Topic {
 
   val topic = {
-    get[Long]("id") ~ get[Long]("scheme_id") ~ get[String]("topicId") ~ get[String]("title") ~ 
-    get[Date]("created") ~ get[Date]("updated") ~ get[Int]("transfers") map {
-      case id ~ scheme_id ~ topicId ~ title ~ created ~ updated ~ transfers => 
-        Topic(id, scheme_id, topicId, title, created, updated, transfers)
+    get[Long]("id") ~ get[Long]("scheme_id") ~ get[String]("topic_id") ~ get[String]("name") ~ 
+    get[Option[String]]("link") ~ get[Date]("created") ~ get[Date]("updated") ~ get[Int]("transfers") map {
+      case id ~ scheme_id ~ topicId ~ name ~ link ~ created ~ updated ~ transfers => 
+        Topic(id, scheme_id, topicId, name, link, created, updated, transfers)
     }
   }
 
@@ -122,7 +129,7 @@ object Topic {
         """
           select * from topic
           where scheme_id = {scheme_id}
-          order by title
+          order by name
           limit 10 offset {offset}
         """
       ).on('scheme_id -> scheme_id, 'offset -> offset).as(topic *)
@@ -135,22 +142,22 @@ object Topic {
     }  
   }
 
-  def create(scheme_id: Long, topicId: String, title: String) {
+  def create(scheme_id: Long, topicId: String, name: String) {
     val created = new Date
     val updated = created
 		DB.withConnection { implicit c =>
 			SQL(
         """
-          insert into topic (scheme_id, topicId, title, created, updated, transfers)
-          values ({scheme_id}, {topicId}, {title}, {created}, {updated}, {transfers})
+          insert into topic (scheme_id, topic_id, name, created, updated, transfers)
+          values ({scheme_id}, {topicId}, {name}, {created}, {updated}, {transfers})
         """
-      ).on('scheme_id -> scheme_id, 'topicId -> topicId, 'title -> title, 'created -> created, 'updated -> updated, 'transfers -> 0).executeUpdate()
+      ).on('scheme_id -> scheme_id, 'topicId -> topicId, 'name -> name, 'created -> created, 'updated -> updated, 'transfers -> 0).executeInsert()
 		}
   }
 
   def forSchemeAndId(schemeId: String, topicId: String): Option[Topic] = {
    DB.withConnection { implicit c =>
-      SQL("select topic.* from scheme, topic where scheme.id = topic.scheme_id and scheme.schemeId = {schemeId} and topic.topicId = {topicId}")
+      SQL("select topic.* from scheme, topic where scheme.id = topic.scheme_id and scheme.scheme_id = {schemeId} and topic.topic_id = {topicId}")
       .on('schemeId -> schemeId, 'topicId -> topicId).as(topic.singleOpt)
     }
   }

@@ -1,13 +1,13 @@
-@(id: Long, targets: List[Target])
+@(id: Long, channels: List[Channel])
 
 @import helper._
 
 @main("Item Transfer - TopicHub") {
 
     <h2>Select a destination:</h2> 
-    <form action="@routes.Application.transfer(id)">
-      @targets.map { target =>
-        <input type="radio" name="target" value="@target.id"/>&nbsp@target.description<br>
+    <form action="@routes.Application.channel(id)">
+      @channels.map { channel =>
+        <input type="radio" name="channel" value="@channel.id"/>&nbsp@channel.description<br>
       } 
       <input type="submit" value="Deposit">
     </form> 
