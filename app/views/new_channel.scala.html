@@ -7,6 +7,7 @@
     <h2>Add a new destination</h2> 
     @form(routes.Application.createChannel(subscriber_id)) {
         
+        @select(channelForm("protocol"), options(Map("sword" -> "sword", "email" -> "email")))
         @select(channelForm("mode"), options(Map("package" -> "package", "alert" -> "alert")))
         @inputText(channelForm("description"))
         @inputText(channelForm("userId"))

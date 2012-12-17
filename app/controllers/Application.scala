@@ -35,6 +35,10 @@ object Application extends Controller {
     Ok(views.html.index("Your new application is ready."))
   }
 
+  def about = Action {
+    Ok(views.html.about())
+  }
+
   def search = Action { implicit request =>
     val rquery = request.queryString
     val pageSize = 20
@@ -139,25 +143,27 @@ object Application extends Controller {
 
   def itemTransfer(id: Long, mode: String) = Action { implicit request =>
     Item.findById(id).map( item => {
-      val sub = Subscriber.findByContact(request.session.get("email").get).get
+      val user = User.findByName(session.get("username").get).get
+      val sub = Subscriber.findByUserId(user.id).get
       Ok(views.html.item_transfer(id, sub.channelsWith(mode)))
     }
     ).getOrElse(NotFound("No such item"))
   }
 
   def transfer(id: Long) = Action { implicit request =>
-    Item.findById(id).map( i => {
-      val sub = Subscriber.findByContact(request.session.get("email").get).get
+    Item.findById(id).map( item => {
+      val user = User.findByName(session.get("username").get).get
+      val sub = Subscriber.findByUserId(user.id).get
       // create a transfer and pass to a conveyor
-      val targ_id = request.queryString.get("target").getOrElse(List("0L")).head.toLong
-      conveyor ! Transfer.make(targ_id, i.id, -1, Some("unknown"))
-      Ok(views.html.item_index(Publisher.all))
+      val channel_id = request.queryString.get("channel").getOrElse(List("0L")).head.toLong
+      conveyor ! Transfer.make(channel_id, item.id, -1L, Some("unknown"))
+      Ok(views.html.item(item))
     }
     ).getOrElse(NotFound("No such item"))
   }
 
   def topics = Action {
-    Ok(views.html.topic_index(Scheme.withGentype("topic")))
+    Ok(views.html.topic_index(Scheme.withGentype("topic").filter(!_.schemeId.equals("meta"))))
   }
 
   def topic(id: Long) = Action {
@@ -208,17 +214,27 @@ object Application extends Controller {
     )(Publisher.apply)(Publisher.unapply)
   )
 
-  def publishers = Action {
-  	Ok(views.html.publisher_index())
+  def publishers = Action { implicit request => {
+    val userName = session.get("username").getOrElse("")
+  	Ok(views.html.publisher_index(User.findByName(userName)))
+    }
   }
 
   def newPublisher = Action {
     Ok(views.html.new_publisher(null, pubForm))
   }
 
-  def publisher(id: Long) = Action {
-    Publisher.findById(id).map( p => 
-      Ok(views.html.publisher(p))
+  def publisher(id: Long) = Action { implicit request => {
+    val userName = session.get("username").getOrElse("")
+    Publisher.findById(id).map( pub => 
+      Ok(views.html.publisher(pub, User.findByName(userName)))
+    ).getOrElse(NotFound("No such publisher"))
+    }
+  }
+
+  def editPublisher(id: Long) = Action {
+    Publisher.findById(id).map( pub => 
+      Ok(views.html.publisher_edit(pub))
     ).getOrElse(NotFound("No such publisher"))
   }
 
@@ -227,8 +243,8 @@ object Application extends Controller {
       errors => BadRequest(views.html.new_publisher(null, errors)),
       value => {
         val user = User.findByName(session.get("username").get).get
-        Publisher.create(user.id, value.pubId, value.name, value.description, value.category, value.status, value.link, value.logo)
-        Redirect(routes.Application.publishers)
+        val pub = Publisher.make(user.id, value.pubId, value.name, value.description, value.category, value.status, value.link, value.logo)
+        Redirect(routes.Application.editPublisher(pub.id))
       }
     )
   }
@@ -302,14 +318,22 @@ object Application extends Controller {
     Ok(views.html.scheme_list(Scheme.all))
   }
 
-  def scheme(id: Long) = Action {
-    Scheme.findById(id).map( s => 
-      Ok(views.html.scheme(s))
+  def scheme(id: Long) = Action { implicit request => {
+    val userName = session.get("username").getOrElse("")
+    Scheme.findById(id).map( scheme => 
+      Ok(views.html.scheme(scheme, User.findByName(userName)))
     ).getOrElse(NotFound("No such scheme"))
+    }
   }
 
   def newScheme = Action {
      Ok(views.html.new_scheme(schemeForm))
+  }
+
+  def editScheme(id: Long) = Action {
+    Scheme.findById(id).map( scheme => 
+      Ok(views.html.scheme_edit(scheme))
+    ).getOrElse(NotFound("No such scheme"))
   }
 
   def createScheme = Action { implicit request =>
@@ -570,14 +594,18 @@ object Application extends Controller {
     )(Subscriber.apply)(Subscriber.unapply)
   )
 
-  def subscribers = Action {
-    Ok(views.html.subscriber_index())
+  def subscribers = Action { implicit request => {
+    val userName = session.get("username").getOrElse("")
+    Ok(views.html.subscriber_index(User.findByName(userName)))
+    }
   }
 
-  def subscriber(id: Long) = Action {
-    Subscriber.findById(id).map( s => 
-      Ok(views.html.subscriber(s))
+  def subscriber(id: Long) = Action { implicit request => {
+    val userName = session.get("username").getOrElse("")
+    Subscriber.findById(id).map( sub => 
+      Ok(views.html.subscriber(sub, User.findByName(userName)))
     ).getOrElse(NotFound("No such subscriber"))
+    }
   }
 
   def subscriberBrowse(filter: String, value: String, page: Int) = Action {
@@ -595,6 +623,13 @@ object Application extends Controller {
     Ok(views.html.new_subscriber(subscriberForm))
   }
 
+   def editSubscriber(id: Long) = Action {
+    Subscriber.findById(id).map( sub => 
+      Ok(views.html.subscriber_edit(sub))
+    ).getOrElse(NotFound("No such subscriber"))
+  }
+
+
   def createSubscriber = Action { implicit request =>
     subscriberForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_subscriber(errors)),
@@ -609,7 +644,7 @@ object Application extends Controller {
   val channelForm = Form(
     mapping(
       "id" -> ignored(0L),
-      "protocol" -> ignored("sword"),
+      "protocol" -> nonEmptyText,
       "mode" -> nonEmptyText,
       "direction" -> ignored("outbound"),
       "description" -> nonEmptyText,
@@ -636,7 +671,7 @@ object Application extends Controller {
     channelForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_channel(sid, errors)),
       value => {
-        val chan = Channel.make("sword", value.mode, "outbound", value.description, value.userId, value.password, value.channelUrl)
+        val chan = Channel.make(value.protocol, value.mode, "outbound", value.description, value.userId, value.password, value.channelUrl)
         // make subscriber the channel owner
         chan.setOwner("sub", sid)
         Redirect(routes.Application.subscriber(sid))

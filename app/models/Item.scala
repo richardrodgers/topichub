@@ -45,6 +45,19 @@ case class Item(id: Long, collection_id: Long, ctype_id: Long, itemId: String,
     }
   }
 
+  def topicsByRegularScheme = {
+    topics.filter(_.scheme_id > 1).groupBy(_.scheme_id).map { el =>
+      (Scheme.findById(el._1).get.schemeId, el._2)
+    }
+  }
+
+  def contentType = {
+    DB.withConnection { implicit c =>
+      SQL("select * from ctype where id = {ctype_id}")
+      .on('ctype_id -> ctype_id).as(Ctype.ctype.singleOpt)
+    }    
+  }
+
   def addMetadata(mdname: String, mdvalue: String) {
     DB.withConnection { implicit c =>
       SQL("insert into metadata (item_id, mdname, mdvalue) values ({item_id}, {mdname}, {mdvalue})")
@@ -135,7 +148,7 @@ object Item {
 
   def findOldest: Option[Item] = {
      DB.withConnection { implicit c =>
-      SQL("select * from item order by created asc").as(item.singleOpt)
+      SQL("select * from item order by created asc limit 1").as(item.singleOpt)
     }
   }
 

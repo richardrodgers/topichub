@@ -1,0 +1,17 @@
+@(scheme: Scheme)
+
+@main("Scheme - TopicHub") {
+  <div class="hero-unit">
+  	<h3>~ Scheme ~</h3>
+     <h2>@scheme.schemeId</h2>
+     <p><a href="@scheme.link" target="_blank">@scheme.description</a></p>
+     <p>@HubUtils.pluralize(scheme.topicCount, "topic")</p>
+     <h3>Finders</h3>
+     <ul>
+     @Finder.findByScheme(scheme.id).map { finder =>
+       <li><p>@finder.description for: @finder.format</p><p><a href="@routes.Application.deleteFinder(scheme.schemeId, finder.id)">remove</a></p></li>
+     }
+     </ul>
+     <p><a rel="tooltip" title="Add a Finder" class="btn btn-primary btn-large" href="@routes.Application.newFinder(scheme.schemeId)">New Finder</a></p>
+   </div>
+}

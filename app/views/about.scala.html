@@ -1,0 +1,15 @@
+@()
+
+@main("About -  TopicHub") {
+  <h2>TopicHub</h2>
+  <p>TopicHub is a web-based service to facilitate distribution of packaged content, using a publish/subscribe model. Publishers and subscribers are expected to be primarily institutional entities, but the service could also be used by individuals on either end.</p>
+  <p>The service adheres to open content interoperability standards wherever possible, specifically:</p>
+  <ul>
+  	<li>Content transfers from publishers to the hub and from the hub to subscribers utilize the <a href="http://swordapp.org">SWORD</a> (v1.3) protocol.</li>
+    <li>Metadata for content held by the hub is exposed by an <a href="http://www.openarchives.org">Open Archives Initiative</a> (version 2.0) OAI-PMH data provider endpoint <a href="@routes.OAI.provide?verb=Identify">here</a></li>
+    <li>Content held by the hub may be harvested using the <a href="http://www.niso.org/workrooms/resourcesync/">NISO/OAI ResourceSync</a> (draft) protocols.</li>
+    <li>Metadata is also expressed using the <a href="http://schema.org">Schema.org</a> vocabulary in hub application web pages.</li>
+    <li>Topics identified by the hub are syndicated in <a href="http://www.atomenabled.org">Atom</a> feeds.</li>
+  </ul>
+  <p>TopicHub is built upon an open-source, Apache 2 licensed platform available on <a href="https://github.com/richardrodgers/topichub">GitHub</a>.</p> 
+}

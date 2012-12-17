@@ -192,11 +192,11 @@ object OAI extends Controller {
   class SidCache() {
     var sidMap: Map[Long, String] = Map()
     def schemeId(id: Long) = {
-      var sid = sidMap.get(id).get
-      if (sid == null) {
-        val sc = Scheme.findById(id).get; sidMap += (id -> sc.schemeId); sid = sc.schemeId
+      var sid = sidMap.get(id)
+      if (sid.isEmpty) {
+        val sc = Scheme.findById(id).get; sidMap += (id -> sc.schemeId); sid = Some(sc.schemeId)
       }
-      sid
+      sid.get
     }
   }
 }

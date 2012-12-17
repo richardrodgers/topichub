@@ -2,9 +2,17 @@
 
 @pagination(page: Int) = {
      <span>
-     	  <a href="@routes.Application.itemBrowse(filter, id, page - 1)">&laquo; Previous</a>
-     	  Viewing @(page * 10 + 1) - @(page * 10 + items.length) of @total
+      @if(page > 0) {
+        <a href="@routes.Application.itemBrowse(filter, id, page - 1)">&laquo; Previous</a>
+      } else {
+        <span class="disabled">&laquo; Previous</span>
+      }
+      Viewing @(page * 10 + 1) - @(page * 10 + items.length) of @total
+      @if(page < total/10) {
         <a href="@routes.Application.itemBrowse(filter, id, page + 1)">Next &raquo;</a>
+      } else {
+        <span class="disabled">Next &raquo;</span>
+      }
      </span>	
 }
 

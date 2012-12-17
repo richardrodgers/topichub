@@ -2,9 +2,17 @@
 
 @pagination = {
    <span>
-     <a href="@routes.Application.topicBrowse(id, page - 1)">&laquo; Previous</a>
+     @if(page > 0) {
+       <a href="@routes.Application.topicBrowse(id, page - 1)">&laquo; Previous</a>
+     } else {
+       <span class="disabled">&laquo; Previous</span>
+     }
      Showing @(page * 10 + 1) - @(page * 10 + topics.length) of @total
-     <a href="@routes.Application.topicBrowse(id, page + 1)">Next &raquo;</a>
+     @if(page < total/10) {
+       <a href="@routes.Application.topicBrowse(id, page + 1)">Next &raquo;</a>
+     } else {
+       <span class="disabled">Next &raquo;</span>
+     }
    </span>	
 }
 
@@ -12,6 +20,7 @@
      <h2>Browse Topics by Scheme</h2>
      <h3>@description</h3>
      @pagination
+     <br>
      <ul>
        @topics.map { topic =>
          <li><a href="@routes.Application.topic(topic.id)">@topic.topicId</a> @topic.name</li>

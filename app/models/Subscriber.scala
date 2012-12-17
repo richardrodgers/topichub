@@ -44,6 +44,18 @@ case class Subscriber(id: Long, user_id: Long, category: String, name: String, v
       count[Long]("c")
     }
   }
+
+  def recentTransfers(max: Int) = {
+    DB.withConnection { implicit c =>
+      SQL(
+        """
+          select transfer.* from transfer, channelowner
+          where transfer.channel_id = channelowner.channel_id and owner_type = 'sub' and owner_id = {id}
+          order by transfer.created desc limit {max}
+        """
+      ).on('id -> id, 'max -> max).as(Transfer.transfer *)
+    }
+  }
 }
 
 object Subscriber {

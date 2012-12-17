@@ -1,23 +1,27 @@
-@(sub: Subscriber)
+@(sub: Subscriber, user: Option[User])
 
 @main("Subscriber - TopicHub") {
 
-  	 <div class="hero-unit">
-  	 <h3>:: @sub.category ::</h3>
-     <h2>@sub.name</h2>
-     @if(! sub.link.isEmpty) {
-       <a href="@sub.link">site</a>
-     }
-     @if(! sub.logo.isEmpty) {
-       <img src="@sub.logo">
-     }
-     <p>Added @HubUtils.fmtDate(sub.created)  @HubUtils.pluralize(sub.subscriptionCount, "subscription")</p>
-     <h3>Destinations</h3>
-     <ul>
-     	  @sub.channels.map { chan =>
-     	    <li><a href="@routes.Application.channel(chan.id)">@chan.description</a></li>
-     	  }
-     </ul>
-     <p><a class="btn btn-primary btn-large" href="@routes.Application.newChannel(sub.id)">New Destination</a></p>
-   </div>
+  <div class="hero-unit">
+    <h3>~ Subscriber ~</h3>
+  	<h3>:: @sub.category ::</h3>
+    <h2>@sub.name</h2>
+    @if(! sub.link.isEmpty) {
+      <a href="@sub.link">site</a>
+    }
+    @if(! sub.logo.isEmpty) {
+      <img src="@sub.logo">
+    }
+    <p>Added @HubUtils.fmtDate(sub.created)  @HubUtils.pluralize(sub.subscriptionCount, "subscription")</p>
+    @if(!user.isEmpty && user.get.hasSubscriber(sub.id)) {
+      <a rel="tooltip" title="manage subscriber account" href="@routes.Application.editSubscriber(sub.id)" class="btn btn-primary btn-large pull-right">Manage &raquo;</a>
+    }
+  </div>
+  <h3>Recent Activity</h3>
+  <dl>
+    @sub.recentTransfers(4).map { trans =>
+      <dt><a href="@routes.Application.item(Item.findById(trans.item_id).get.id)">@Item.findById(trans.item_id).get.metadataValue("title")</a></dt>
+      <dd>To: @trans.channel.get.description on @HubUtils.fmtDate(trans.created) via @trans.channel.get.protocol</dd>
+    }
+  </dl>
 }

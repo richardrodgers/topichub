@@ -1,15 +1,13 @@
-@(scheme: Scheme)
+@(scheme: Scheme, user: Option[User])
 
 @main("Scheme - TopicHub") {
-
-     <h2>Scheme: @scheme.schemeId</h2>
+  <div class="hero-unit">
+  	<h3>~ Scheme ~</h3>
+     <h2>@scheme.schemeId</h2>
      <p><a href="@scheme.link" target="_blank">@scheme.description</a></p>
-
-     <h3>Finders</h3>
-     <ul>
-     @Finder.findByScheme(scheme.id).map { finder =>
-       <li><p>@finder.description for: @finder.format</p><p><a href="@routes.Application.deleteFinder(scheme.schemeId, finder.id)">remove</a></p></li>
+     <p>@HubUtils.pluralize(scheme.topicCount, "topic")</p>
+     @if(!user.isEmpty) {
+       <a rel="tooltip" title="manage scheme" href="@routes.Application.editScheme(scheme.id)" class="btn btn-primary btn-large pull-right">Manage &raquo;</a>
      }
-     </ul>
-     <p><a class="btn btn-primary btn-large" href="@routes.Application.newFinder(scheme.schemeId)">New Finder</a></p>
+   </div>
 }

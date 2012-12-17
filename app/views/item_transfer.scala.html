@@ -5,7 +5,7 @@
 @main("Item Transfer - TopicHub") {
 
     <h2>Select a destination:</h2> 
-    <form action="@routes.Application.channel(id)">
+    <form action="@routes.Application.transfer(id)">
       @channels.map { channel =>
         <input type="radio" name="channel" value="@channel.id"/>&nbsp@channel.description<br>
       } 

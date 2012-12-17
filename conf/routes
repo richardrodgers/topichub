@@ -5,6 +5,7 @@
 
 # Home page
 GET     /                           controllers.Application.index
+GET     /about                      controllers.Application.about
 
 # Publisher pages
 GET     /publishers                 controllers.Application.publishers
@@ -12,12 +13,14 @@ GET     /publishers/browse          controllers.Application.publisherBrowse(filt
 GET     /publisher/:id              controllers.Application.publisher(id: Long)
 GET     /publishers/create          controllers.Application.newPublisher
 GET     /publisher/:id/create       controllers.Application.newCollection(id: Long)
+GET     /publisher/:id/edit         controllers.Application.editPublisher(id: Long)
 POST    /publishers                 controllers.Application.createPublisher
 POST    /publisher/:id              controllers.Application.createCollection(id: Long)
 
 # Scheme pages
 GET     /schemes                    controllers.Application.schemes
 GET     /scheme/:id                 controllers.Application.scheme(id: Long)
+GET     /scheme/:id/edit            controllers.Application.editScheme(id: Long)
 GET     /schemes/create             controllers.Application.newScheme
 POST    /schemes                    controllers.Application.createScheme
 
@@ -67,6 +70,7 @@ POST    /topic/subscribe/:id         controllers.Application.subscribe(id: Long)
 GET     /subscribers                controllers.Application.subscribers
 GET     /subscribers/browse         controllers.Application.subscriberBrowse(filter: String, value: String, page: Int ?= 0)
 GET     /subscribers/create         controllers.Application.newSubscriber
+GET     /subscriber/:id/edit        controllers.Application.editSubscriber(id: Long)
 GET     /subscriber/:id             controllers.Application.subscriber(id: Long)
 GET     /channel/:id                controllers.Application.channel(id: Long)
 GET     /subscription/:id           controllers.Application.subscription(id: Long)

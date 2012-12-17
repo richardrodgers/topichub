@@ -15,13 +15,39 @@ import anorm.SQL
 import anorm.SqlRow
 
 /** User is an authenticated identity to a hub, who may be a publisher, subscriber, editor,
-  * or site adminsirator.
+  * site administrator or some combination thereof.
   *
   * @author richardrodgers
   */
 
 case class User(id: Long, name: String, email: String, password: String,
                 role: String, created: Date, accessed: Date) {
+
+  def isPublisher: Boolean = {
+    DB.withConnection { implicit c =>
+      val count = SQL("select count(*) as c from publisher where user_id = {id}").on('id -> id).apply.head
+      count[Long]("c") > 0L
+    }  
+  }
+
+  def hasPublisher(pub_id: Long): Boolean = {
+    DB.withConnection { implicit c =>
+      SQL("select * from publisher where id = {pub_id} and user_id = {user_id}").on('pub_id -> pub_id, 'user_id -> id).as(Publisher.pub.singleOpt).isDefined
+    }    
+  }
+
+  def isSubscriber: Boolean = {
+    DB.withConnection { implicit c =>
+      val count = SQL("select count(*) as c from subscriber where user_id = {id}").on('id -> id).apply.head
+      count[Long]("c") > 0L
+    }  
+  }
+
+  def hasSubscriber(sub_id: Long): Boolean = {
+    DB.withConnection { implicit c =>
+      SQL("select * from subscriber where id = {sub_id} and user_id = {user_id}").on('sub_id -> sub_id, 'user_id -> id).as(Subscriber.subscriber.singleOpt).isDefined
+    }    
+  }
 
   def recordVisit {
     DB.withConnection { implicit c =>

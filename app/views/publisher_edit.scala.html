@@ -1,0 +1,24 @@
+@(pub: Publisher)
+
+@main("Publisher - TopicHub") {
+  <div itemscope itemtype="http://schema.org/Organization"class="hero-unit">
+     <h3>~ Publisher ~</h3>
+     <h2 itemprop="name">@pub.name</h2>
+     <p>@pub.description</p>
+     @if(!pub.link.isEmpty) {
+        <p><a href="@pub.link">publisher site</a></p>
+     }
+     <p>Registered @HubUtils.fmtDate(pub.created)</P>
+     <p>@HubUtils.pluralize(pub.itemCount, "article") deposited</p>
+     <p><a class="btn btn-primary btn-large" href="@routes.Application.newCollection(pub.id)">New Collection</a></p>
+  </div>
+  @if(pub.collectionCount > 0) {
+    <h3>Collections</h3>
+    <dl>
+      @Collection.findByPublisher(pub.id).map { coll =>
+      <dt><a href="@routes.Application.itemBrowse("collection", coll.id)">@coll.description</a></dt>
+      <dd>Enrolled on @HubUtils.fmtDate(coll.created). @HubUtils.pluralize(coll.deposits, "deposit") - most recent @HubUtils.fmtDate(coll.updated)</dd>
+    }
+    </dl>
+  }
+}

@@ -98,11 +98,15 @@ object Publisher {
     }  
   }
 
-  def create(userId: Long, pubId: String, name: String, description: String, category: String, status: String, link: Option[String], logo: Option[String]) {
+  def create(userId: Long, pubId: String, name: String, description: String, category: String, status: String, link: Option[String], logo: Option[String]) = {
     DB.withConnection { implicit c =>
       SQL("insert into publisher (user_id, pub_id, name, description, category, status, link, logo, created) values ({user_id}, {pubId}, {name}, {description}, {category}, {status}, {link}, {logo}, {created})")
       .on('user_id -> userId, 'pubId -> pubId, 'name -> name, 'description -> description, 'category -> category, 'status -> status, 'link -> link, 'logo -> logo, 'created -> new Date).executeInsert()
     }
+  }
+
+  def make(userId: Long, pubId: String, name: String, description: String, category: String, status: String, link: Option[String], logo: Option[String]) = {
+    findById(create(userId, pubId, name, description, category, status, link, logo).get).get
   }
 
   def delete(id: Long) {

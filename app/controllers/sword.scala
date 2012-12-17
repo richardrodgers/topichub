@@ -8,7 +8,7 @@ import scala.xml.{NodeSeq, XML}
 
 import akka.actor.Props
 
-import java.io.{File, FileInputStream, FileOutputStream, InputStream}
+import java.io.{ByteArrayOutputStream, File, FileInputStream, FileOutputStream, InputStream}
 
 import org.joda.time.format.ISODateTimeFormat
 
@@ -27,6 +27,7 @@ import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.libs.concurrent._
 import play.api.http.HeaderNames._
+import play.api.http.Writeable
 import play.api.Play.current
 
 import models._
@@ -263,9 +264,20 @@ object SwordClient {
     //req.files(new FileParam(depFile, depFile.getName))
     //req.setHeader("content-type", "application/zip")
     //req.mimeType("application/zip")
-    val foo = cFile.content.asInstanceOf[InputStream]
-    var resp = req.post("foo")
-    resp.await.get.xml
+    //val foo = cFile.content.asInstanceOf[InputStream]
+    // really lame - but apparently no stream-based way to do this in WS API
+    val content = cFile.content
+    val bytesOut = new ByteArrayOutputStream
+    val buf = new Array[Byte](2048)
+    var read = content.read(buf)
+    while(read != -1) {
+      bytesOut.write(buf, 0, read)
+      read = content.read(buf)
+    }
+    //Async {
+    var resp = req.post(bytesOut.toByteArray)
+    //resp.await.get.xml
+    //}
       // look up subscriber data
       //var sub = Subscription.find("byUserName", "rrodgers@mit.edu").first match {
       //  case Some(x) => x

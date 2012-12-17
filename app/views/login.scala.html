@@ -3,7 +3,6 @@
 @main("Login - TopicHub") {
 
      <h2>Login:</h2>
-
      @helper.form(routes.Security.authenticate) {
         <p>
           <input type="text" name="username" placeholder="Username" id="username" value="@form("username").value">
@@ -14,5 +13,6 @@
         <p>
           <button type="submit" id="loginbutton">Login</button>
         </p>
-   }
+     }
+     <p>If you do not have an account, please <a href="@routes.Security.startregister">register</a></p>
 }

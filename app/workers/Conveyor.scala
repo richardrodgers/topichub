@@ -77,7 +77,7 @@ object  Conveyor {
     // only transfer options currently supported are SWORD deposit or email notification
     channel.protocol match {
       case "sword" => SwordClient.makeDeposit(item, channel)
-      case "email" => emailNotify(item, channel, topic.get)
+      case "email" => emailNotify(item, channel, topic)
     } 
     // update objects to reflect delivery
     transfer.updateState("done")
@@ -91,7 +91,7 @@ object  Conveyor {
 
   // this implementation is very mailgun-specific - ultimately will
   // need to provide a plugin system (including smtp option)
-  def emailNotify(item: Item, channel: Channel, topic: Topic) {
+  def emailNotify(item: Item, channel: Channel, topic: Option[Topic]) {
 
     import java.io.ByteArrayOutputStream
     import org.apache.http.entity.mime.MultipartEntity
@@ -102,7 +102,8 @@ object  Conveyor {
     entity.addPart("from", new StringBody("noreply@topichub.org", cset))
     // assumes targetUrl is a 'mailto:' URL (length 7)
     entity.addPart("to", new StringBody(channel.channelUrl.substring(7), cset))
-    val subj = "TopicHub Alert - new in: " + topic.name
+    val subj = if (! topic.isEmpty) "TopicHub Alert - new in: " + topic.get.name
+               else "TopicHub Item Reminder"
     entity.addPart("subject", new StringBody(subj, cset))
     val text = "Now available on TopicHub:\n" + 
                "Title: " + item.metadataValue("title") + "\n" +

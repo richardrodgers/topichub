@@ -28,6 +28,12 @@ case class Transfer(id: Long, channel_id: Long, item_id: Long, subscription_id: 
       .on('state -> state, 'modified -> new Date, 'id -> id).executeUpdate()
     }
   }
+
+  def channel = {
+    DB.withConnection { implicit c =>
+      SQL("select * from channel where id = {channel_id}").on('channel_id -> channel_id).as(Channel.channel.singleOpt)
+    }
+  }
 }
 
 object Transfer {

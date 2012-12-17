@@ -1,6 +1,6 @@
 /**
  * Copyright 2012 MIT Libraries
- * Licensed under:  http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under: http://www.apache.org/licenses/LICENSE-2.0
  */
 package models
 
