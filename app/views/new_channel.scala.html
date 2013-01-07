@@ -3,17 +3,30 @@
 @import helper._
 
 @main("New Destination - TopicHub") {
-
-    <h2>Add a new destination</h2> 
-    @form(routes.Application.createChannel(subscriber_id)) {
-        
-        @select(channelForm("protocol"), options(Map("sword" -> "sword", "email" -> "email")))
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span4">
+      @form(routes.Application.createChannel(subscriber_id)) {  
+        @select(channelForm("protocol"), options(Map("sword" -> "SWORD", "email" -> "email")))
         @select(channelForm("mode"), options(Map("package" -> "package", "alert" -> "alert")))
         @inputText(channelForm("description"))
         @inputText(channelForm("userId"))
         @inputText(channelForm("password")) 
         @inputText(channelForm("channelUrl")) 
-        
         <input type="submit" value="Create">      
-    }
+      }
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Define a content destination</h2>
+          <p>Each destination represents an 'address' where content packages or notifications can be sent.
+             You can create as many as you need.</p>
+          <p>The first two selections specify how content will be delivered - only choose them if you can support the protocol: unless you run a
+            repository, you are unlikely to have support for SWORD, but you almost certainly have an email client.</p>
+          <p>Choose a description that distinguishes one destination from another. The 'channelUrl' is the address URL: use an HTTP URL
+            for SWORD, or a 'mailto:' URL for email. If authenticaton is required, enter the credentials also.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 }

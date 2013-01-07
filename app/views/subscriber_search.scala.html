@@ -1,0 +1,13 @@
+@(subs: Seq[Option[Subscriber]], query: String, page: Int)
+
+@main("Subscribers -  TopicHub") {
+
+     <h2>Search: '@query' yielded @subs.size subscribers</h2>
+     <i class="icon-search"></i>
+     <dl>
+       @subs.map { sub =>
+         <dt><a href="@routes.Application.subscriber(sub.get.id)">@sub.get.name</a></dt>
+         <dd>@sub.get.category</dd>
+       }
+     </dl>
+}

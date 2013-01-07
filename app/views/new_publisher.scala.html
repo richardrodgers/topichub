@@ -3,17 +3,33 @@
 @import helper._
 
 @main("New Publisher - TopicHub") {
-
-     <h2>Add a new publisher</h2> 
-    @form(routes.Application.createPublisher) {
-        
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span4">
+      @form(routes.Application.createPublisher) {   
+        @select(pubForm("category"), options(Map("STM publisher" -> "STM publisher", "OA Journal" -> "OA Journal", "Other" -> "Other")))
         @inputText(pubForm("pubId"))
         @inputText(pubForm("name")) 
-        @textarea(pubForm("description")) 
-        @inputText(pubForm("category"))
+        @textarea(pubForm("description"))
         @inputText(pubForm("link"))
-        @inputText(pubForm("logo"))
-        
+        @inputText(pubForm("logo"))      
         <input type="submit" value="Create">      
-    }
+      }
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Define your publisher profile</h2>
+          <p>Choose a category that best describes the type of publisher, or 'other' if none fits.</p>
+          <p>Fill in the fields at left making sure that you select a 'pubId' that:
+          <ul>
+            <li>is not already in use on the hub.</li>
+            <li>is a short <em>handle</em> containing no spaces</li>
+            <li>is mnemonically helpful</li>
+          </ul></p>
+          <p>Put the full name in the name field, and add a terse description in the next one.</p>
+          <p>Add a URL to your main site in the link field, and a URL for a logo if you have one.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 }

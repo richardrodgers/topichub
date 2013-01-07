@@ -1,14 +1,22 @@
-@(id: Long, channels: List[Channel])
+@(topic: Topic, channels: List[Channel])
 
 @import helper._
 
 @main("Topic Subscribe - TopicHub") {
-
-    <h2>Select a destination:</h2> 
-    <form action="@routes.Application.subscribe(id)" method="POST">
-    @channels.map { channel =>
-        <input type="radio" name="channel" value="@channel.id"/>&nbsp@channel.description<br>
-    } 
-    <input type="submit" value="Subscribe">
+    <h3>Topic '@topic.name' currently has @HubUtils.pluralize(topic.itemCount, "item")</h3>
+    <h4>Select a destination:</h4> 
+    <form action="@routes.Application.subscribe(topic.id)" method="POST">
+    	<select name="channel">
+      @channels.map { channel =>
+        <option value="@channel.id"/>&nbsp@channel.description</option>
+      } 
+      </select>
+      <p>
+      	<input type="radio" name="policy" value="all" checked> All Items</input>
+      	<input type="radio" name="policy" value="new"> Only New Items</input>
+      </p>
+      <p>
+        <input type="submit" value="Subscribe">
+      </p>
     </form> 
 }

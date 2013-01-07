@@ -47,8 +47,6 @@ object SwordServer extends Controller {
 
   val maxUploadSize = -1
 
-  var counter = 1
-
   val cataloger = Akka.system.actorOf(Props[CatalogWorker], name="cataloger")
 
   /** Returns the SWORD service document for this server
@@ -97,16 +95,12 @@ object SwordServer extends Controller {
   }
 
   private def uploadPackage(tempFile: TemporaryFile, coll: Collection, hdrMd5: String): Item = { 
-    val tmpFile: File = new File("/Users/richardrodgers/" + counter + ".zip")
-    counter += 1
-    tempFile.moveTo(tmpFile)
-    val item = Store.upload(tmpFile, maxUploadSize, hdrMd5) match {
+  
+    val item = Store.upload(tempFile, maxUploadSize, hdrMd5) match {
       case Right(it) => createItem(coll, it)
       case Left(err) => null //error = err; null
     }
     if (item != null) {
-      // get rid of temp file
-      tmpFile.delete
       // update all objects participating in the deposit - transfer, channel, and collection
       val chan = coll.channel.get
       Transfer.make(chan.id, item.id, 0L, None).updateState("done")
@@ -120,6 +114,7 @@ object SwordServer extends Controller {
 
   /** Validates and receives a SWORD deposit to this server
     */
+    /*
   def acceptDeposit(collId: Long) = Action(parse.temporaryFile) { implicit request =>
     // do as much preliminary checking as we can before reading the package
     // e.g. content too big, unknown package URI or collection, etc
@@ -149,8 +144,7 @@ object SwordServer extends Controller {
     val hdrMd5 = request.headers.get("content-md5").getOrElse(null)
     var item: Item = null
     if (error == null) {
-      val tmpFile: File = new File("/Users/richardrodgers/" + counter + ".zip")
-      counter += 1
+      val tmpFile: File = File.createTempFile("sword-" + coll.id.toHexString, ".zip")
       request.body.moveTo(tmpFile)
       item = Store.upload(tmpFile, maxUploadSize, hdrMd5) match {
         case Right(it) => createItem(coll, it)
@@ -173,6 +167,7 @@ object SwordServer extends Controller {
       body = Enumerator(if (error == null) entryDoc(item) else errorDoc(error.toString))
     )
   }
+  */
 
   private def createItem(coll: Collection, content: StoredContent): Item = {
     Item.findById(Item.create(coll.id, coll.ctype_id, content.md5).get).get

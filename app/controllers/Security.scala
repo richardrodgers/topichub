@@ -43,6 +43,17 @@ object Security extends Controller {
     Ok(views.html.index("hello")).withNewSession
   }
 
+  val forgotForm = Form(
+    tuple(
+      "email" -> text,
+      "again" -> text
+    ) verifying("Invalid Email address", result => true)
+  )
+
+  def forgot = Action { implicit request =>
+    Ok(views.html.forgot(forgotForm))
+  }
+
   def authenticate = Action { implicit request =>
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.login(formWithErrors)),

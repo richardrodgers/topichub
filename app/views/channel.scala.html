@@ -1,14 +1,24 @@
 @(channel: Channel)
 
 @main("Destination - TopicHub") {
-
-     <h2>Destination</h2>
-     <p>@channel.description</p>
-
+  <div class="hero-unit">
+    <h3>~ Destination ~</h3>
+    <h2>@channel.description</h2>
+     <p>Type: @channel.mode</p>
+     <p>URL: @channel.channelUrl</p>
+     <p>Created: @HubUtils.fmtDate(channel.created)</p>
+     <p>@HubUtils.pluralize(channel.subscriptionCount, "subscription")</p>
+     <p>@HubUtils.pluralize(channel.transfers, "transfer") - most recent: @HubUtils.fmtDate(channel.updated)</p>
+  </div>
      <h3>Subscriptions</h3>
      <ul>
      @channel.subscriptions.map { sub =>
-			 <li>Topic: <a href="@routes.Application.subscription(sub.id)">@Topic.findById(sub.topic_id).get.name</a></li>
+       @defining(Topic.findById(sub.topic_id).get) { topic => 
+         <li>
+         <a rel="tooltip" title="cancel this subscription" href="@routes.Application.cancelSubscription(sub.id)" class="btn btn-primary btn-mini">Cancel &raquo;</a>
+			   <a href="@routes.Application.topic(topic.id)">@topic.name</a> (@topic.topicId) Created: @HubUtils.fmtDate(sub.created) @HubUtils.pluralize(sub.transfers, "transfer")
+			   </li>
+			 }
      }
      </ul>
 }

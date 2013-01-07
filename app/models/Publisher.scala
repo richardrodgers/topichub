@@ -7,6 +7,7 @@ package models
 import java.util.Date
 
 import play.api.db.DB
+import play.api._
 import play.api.Play.current
 
 import anorm.SqlParser._
@@ -135,6 +136,15 @@ object HubUtils {
       case 1L => "One " + word
       case _ => amt + " " + word + "s"
     }
+  }
+
+  def interpolate(token: String) = {
+    val start = token.indexOf("${")
+    if (start >= 0) {
+      val end = token.indexOf("}", start + 2)
+      Play.configuration.getString(token.substring(start + 2, end)).get
+    } else
+      token
   }
 
 }

@@ -16,6 +16,7 @@ import play.api.libs.ws.WS
 
 import controllers.{Application, SwordClient}
 import models.{Channel, Item, Transfer, Subscription, Topic}
+import models.HubUtils._
 
 /** Conveyor delivers content or data to specified targets.
   * Currently only delivery mode is SWORD deposit
@@ -36,10 +37,15 @@ class ConveyorWorker extends Actor {
 object  Conveyor {
 
   import play.api.Play.current
+  import java.io.ByteArrayOutputStream
+  import org.apache.http.entity.mime.MultipartEntity
+  import org.apache.http.entity.mime.content._
 
   val emailSvc = Play.configuration.getString("hub.email.url").get
   val cset = Charset.forName("UTF-8")
   val hubUrl = Play.configuration.getString("hub.server.url").get
+  val adminEmail = Play.configuration.getString("hub.admin.email").get
+  val mgApiKey = Play.configuration.getString("hub.mailgun.apikey").get
 
   def transfer(trans: Transfer) {
     // deliver item according to transfer instructions
@@ -55,7 +61,7 @@ object  Conveyor {
       val topic = Topic.findById(sub.topic_id).get
       val channel = Channel.findById(sub.channel_id).get
       topic.items.foreach( item => {
-        val transfer = Transfer.make(channel.id, item.id, sub.id, Some("none"))
+        val transfer = Transfer.make(channel.id, item.id, topic.id, Some("none"))
         transferItem(transfer, item, channel, Some(topic))
       })
     }
@@ -67,7 +73,7 @@ object  Conveyor {
     item.topics.foreach( topic => {
       topic.subscriptions.foreach( sub => {
         val channel = Channel.findById(sub.channel_id).get
-        val transfer = Transfer.make(channel.id, item.id, sub.id, Some("none"))
+        val transfer = Transfer.make(channel.id, item.id, topic.id, Some("none"))
         transferItem(transfer, item, channel, Some(topic))      
       })
     })
@@ -83,8 +89,8 @@ object  Conveyor {
     transfer.updateState("done")
     item.recordTransfer
     channel.recordTransfer
-    if (transfer.subscription_id != -1) {
-      Subscription.findById(transfer.subscription_id).get.recordTransfer
+    if (transfer.topic_id != -1) {
+      Subscription.findByTopicAndChannel(transfer.topic_id, channel.id).head.recordTransfer
       topic.get.recordTransfer
     }
   }
@@ -92,10 +98,6 @@ object  Conveyor {
   // this implementation is very mailgun-specific - ultimately will
   // need to provide a plugin system (including smtp option)
   def emailNotify(item: Item, channel: Channel, topic: Option[Topic]) {
-
-    import java.io.ByteArrayOutputStream
-    import org.apache.http.entity.mime.MultipartEntity
-    import org.apache.http.entity.mime.content._
 
     val entity = new MultipartEntity()
     // should all customization of this
@@ -112,12 +114,31 @@ object  Conveyor {
     entity.addPart("text", new StringBody(text, cset))
     val out = new ByteArrayOutputStream
     entity.writeTo(out)
+    //println("about to email: " + emailSvc + " userId: " + interpolate(channel.userId) + " pwd: " + interpolate(channel.password))
+    val header = (entity.getContentType.getName, entity.getContentType.getValue)
+    val req = WS.url(emailSvc)
+    .withHeaders(header)
+    .withAuth(interpolate(channel.userId), interpolate(channel.password), AuthScheme.BASIC)
+    val resp = req.post(out.toByteArray()).await.get
+    //println("resp: " + resp.body)
+  }
+
+  // also directly wired into Mailgun API - need abstraction
+  def emailFeedback(from: String, reply: Boolean, msg: String) {
+
+    val entity = new MultipartEntity()
+    entity.addPart("from", new StringBody(from, cset))
+    entity.addPart("to", new StringBody(adminEmail, cset))
+    if (reply) entity.addPart("h:Reply-To", new StringBody(from))
+    entity.addPart("subject", new StringBody("TopicHub Feedback", cset))
+    entity.addPart("text", new StringBody(msg, cset))
+    val out = new ByteArrayOutputStream
+    entity.writeTo(out)
     //println("about to email: " + emailSvc)
     val header = (entity.getContentType.getName, entity.getContentType.getValue)
     val req = WS.url(emailSvc)
     .withHeaders(header)
-    .withAuth(channel.userId, channel.password, AuthScheme.BASIC)
+    .withAuth("api", mgApiKey, AuthScheme.BASIC)
     val resp = req.post(out.toByteArray()).await.get
-    //println("resp: " + resp.body)
   }
 }

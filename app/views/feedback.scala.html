@@ -1,0 +1,18 @@
+@(fbform: Form[(String,Boolean,String)])(implicit flash: Flash)
+
+@import helper._
+
+@main("Feedback -  TopicHub") {
+  <h2>Feedback</h2>
+  <p>We'd love to hear from you!</p>
+  <p>Please record any comments, questions, suggestions, etc you have in the field below. You may check the 'reply' box if you would like a reply sent to the email supplied. You may comment on application design and usability, or on the content you find (or don't) - if your comment pertains to content supplied by users, we will make every effort to relay it, consistent with their wishes.</p>
+  @form(routes.Application.takeFeedback) {
+    @inputText(fbform("email"))
+    @checkbox(fbform("reply"), 'info -> "check")
+    @textarea(fbform("comment"))
+    <p>
+      <button type="submit" id="sendbutton">Send</button>
+    </p>
+  }
+  <p>Thanks for helping make TopicHub a more valuable service!</p>
+}

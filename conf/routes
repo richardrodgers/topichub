@@ -3,9 +3,12 @@
 # Routes in sections labeled 'pages' return HTML, those labeled 'services' return XML, JSON
 # ~~~~
 
-# Home page
+# Home and informational pages
 GET     /                           controllers.Application.index
 GET     /about                      controllers.Application.about
+GET     /terms                      controllers.Application.terms
+GET     /feedback                   controllers.Application.feedback
+POST    /feedback                   controllers.Application.takeFeedback
 
 # Publisher pages
 GET     /publishers                 controllers.Application.publishers
@@ -49,7 +52,7 @@ POST    /pkgmaps                    controllers.Application.createPkgmap
 POST    /pkgmap/:id                 controllers.Application.newPkgmapMapping(id: Long)
 
 # Item pages
-GET     /items                       controllers.Application.items
+#GET     /items                       controllers.Application.items
 GET     /items/search                controllers.Application.itemSearch(topicId: String, page: Int)
 GET     /items/browse                controllers.Application.itemBrowse(filter: String, id: Long, page: Int ?= 0)
 GET     /item/:id                    controllers.Application.item(id: Long)
@@ -63,8 +66,8 @@ GET     /topics                      controllers.Application.topics
 #GET     /topics/search               controllers.Application.topicSearch
 GET     /topics/browse               controllers.Application.topicBrowse(id: Long, page: Int ?= 0)
 GET     /topic/:id                   controllers.Application.topic(id: Long)
-GET     /topic/subscribe/:id         controllers.Application.topicSubscribe(id: Long, mode: String)
-POST    /topic/subscribe/:id         controllers.Application.subscribe(id: Long)
+GET     /topic/:id/subscribe/        controllers.Application.topicSubscribe(id: Long, mode: String)
+POST    /topic/:id/subscribe/        controllers.Application.subscribe(id: Long)
 
 # Subscriber pages
 GET     /subscribers                controllers.Application.subscribers
@@ -73,7 +76,7 @@ GET     /subscribers/create         controllers.Application.newSubscriber
 GET     /subscriber/:id/edit        controllers.Application.editSubscriber(id: Long)
 GET     /subscriber/:id             controllers.Application.subscriber(id: Long)
 GET     /channel/:id                controllers.Application.channel(id: Long)
-GET     /subscription/:id           controllers.Application.subscription(id: Long)
+GET     /subscription/:id/cancel    controllers.Application.cancelSubscription(id: Long)
 GET     /channels/:sid/create        controllers.Application.newChannel(sid: Long)
 POST    /subscribers                controllers.Application.createSubscriber
 POST    /subscriber/:sid/channels   controllers.Application.createChannel(sid: Long)
@@ -87,6 +90,7 @@ GET     /logout                     controllers.Security.logout
 POST    /authenticate               controllers.Security.authenticate
 GET     /register                   controllers.Security.startregister
 POST    /register                   controllers.Security.register
+GET     /forgot                     controllers.Security.forgot
 
 # SWORD services
 GET     /sword/servicedocument      controllers.SwordServer.serviceDocument

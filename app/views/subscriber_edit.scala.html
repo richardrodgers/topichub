@@ -13,19 +13,12 @@
        <img src="@sub.logo">
      }
      <p>Added @HubUtils.fmtDate(sub.created)  @HubUtils.pluralize(sub.subscriptionCount, "subscription")</p>
-     <h3>Destinations</h3>
-     <ul>
-     	  @sub.channels.map { chan =>
-     	    <li><a href="@routes.Application.channel(chan.id)">@chan.description</a></li>
-     	  }
-     </ul>
-     <p><a class="btn btn-primary btn-large" href="@routes.Application.newChannel(sub.id)">New Destination</a></p>
   </div>
-  <h3>Recent Activity</h3>
-  <dl>
-    @sub.recentTransfers(4).map { trans =>
-      <dt><a href="@routes.Application.item(Item.findById(trans.item_id).get.id)">@Item.findById(trans.item_id).get.metadataValue("title")</a></dt>
-      <dd>To: @trans.channel.get.description on @HubUtils.fmtDate(trans.created) via @trans.channel.get.protocol</dd>
+  <h3>Destinations</h3>
+  <ul>
+    @sub.channels.map { chan =>
+      <li><a href="@routes.Application.channel(chan.id)">@chan.description</a> Type: @chan.mode Subscriptions: @chan.subscriptionCount Transfers: @chan.transfers</li>
     }
-  </dl>
+  </ul>
+  <p><a class="btn btn-primary btn-large" href="@routes.Application.newChannel(sub.id)">New Destination</a></p>
 }

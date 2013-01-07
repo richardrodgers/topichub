@@ -28,6 +28,12 @@ case class Scheme(id: Long, schemeId: String, gentype: String, category: String,
       count[Long]("c")
     }
   }
+
+  def validator: Option[Validator] = {
+    DB.withConnection { implicit c =>
+      SQL("select * from validator where scheme_id = {id}").on('id -> id).as(Validator.validator.singleOpt)
+    }   
+  }
 }
 
 object Scheme {

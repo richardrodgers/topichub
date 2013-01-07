@@ -3,21 +3,34 @@
 @import helper._
 
 @main("New Subscriber - TopicHub") {
-
-     <h2>Add a new subscriber</h2> 
-    @form(routes.Application.createSubscriber) {
-        
-        @inputText(subForm("category"))
-        @inputText(subForm("name")) 
-        @inputText(subForm("visibility"))
-        @inputText(subForm("keywords")) 
-        @inputText(subForm("link"))
-        @inputText(subForm("logo")) 
-        @inputText(subForm("contact"))  
-        @inputText(subForm("swordService")) 
-        @inputText(subForm("terms"))
-        @inputText(subForm("backFile"))  
-        
-        <input type="submit" value="Create">      
-    }
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span4">
+        @form(routes.Application.createSubscriber) {  
+          @select(subForm("category"), options(Map("institutional repository" -> "institutional repository",
+                                                   "subject repository" -> "subject repository", "other" -> "other")))
+          @select(subForm("visibility"), options(Map("public" ->"public", "private" -> "private")))
+          @inputText(subForm("name")) 
+          @inputText(subForm("keywords")) 
+          @inputText(subForm("link"))
+          @inputText(subForm("logo")) 
+          @inputText(subForm("contact"))  
+          @inputText(subForm("swordService")) 
+          @inputText(subForm("terms"))
+          @inputText(subForm("backFile"))  
+          <input type="submit" value="Create">      
+        }
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Define your subscriber profile</h2>
+          <p>You can create a subscriber <em>identity</em> very easily by completing this form.
+             You will then be able to define specific 'destinations' for content you want.</p>
+          <p>Visibility controls your appearance on the hub - choose 'public' to share your activities.</p>
+          <p>Choose an accurate name (usually an institution name), since this (and keywords) will be indexed by the hub and be the primary way
+          to discover you. Provide a URL to your site in the link field, and a logo URL if available</p>
+        </div>
+      </div>
+    </div>
+  </div>
 }

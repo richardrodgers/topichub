@@ -12,7 +12,8 @@ object ApplicationBuild extends Build {
       "org.scalesxml" %% "scales-jaxen" % "0.4.3",
       "jaxen" % "jaxen" % "1.1.4",
       "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
-      "org.apache.httpcomponents" % "httpmime" % "4.1.2"
+      "org.apache.httpcomponents" % "httpmime" % "4.1.2",
+      "com.amazonaws" % "aws-java-sdk" % "1.3.27"
     )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(

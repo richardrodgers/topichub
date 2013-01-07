@@ -22,7 +22,7 @@ import play.api.libs.json._
 
 import models._
 import store._
-import workers.{Cataloger, ConveyorWorker, IndexWorker}
+import workers.{Cataloger, Conveyor, ConveyorWorker, IndexWorker}
 
 object Application extends Controller {
 
@@ -39,13 +39,40 @@ object Application extends Controller {
     Ok(views.html.about())
   }
 
+  def terms = Action {
+    Ok(views.html.terms())
+  }
+
+  val feedbackForm = Form(
+    tuple(
+      "email" -> email,
+      "reply"  -> checked("what"),
+      "comment" -> nonEmptyText
+    ) verifying("Invalid Email address", result => true)
+  )
+
+  def feedback = Action { implicit request =>
+    Ok(views.html.feedback(feedbackForm))
+  }
+
+  def takeFeedback = Action { implicit request =>
+    feedbackForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.feedback(errors)),
+      value => {
+        //val user = User.findByName(session.get("username").get).get
+        Conveyor.emailFeedback(value._1, value._2, value._3)
+        Redirect(routes.Application.index)
+      }
+    )
+  }
+
   def search = Action { implicit request =>
     val rquery = request.queryString
     val pageSize = 20
     val page = rquery.get("page").getOrElse(List("0")).head.toInt
     val offset = page * pageSize
     val etype = rquery.get("etype").get.head
-    val query = rquery.get("query").get.head
+    val query = rquery.get("query").getOrElse(List("foo")).head
     Async {
       val req = WS.url(indexSvc +  etype + "/_search?q=" + query + "&from=" + offset + "&size=" + pageSize)
       req.get().map { response =>
@@ -58,16 +85,17 @@ object Application extends Controller {
         if ("topic".equals(etype)) {
           val topics = hits map ( id => Topic.findById(id) )
           Ok(views.html.topic_search(topics, page))
-        } else {
+        } else if ("item".equals(etype)) {
           val items = hits map ( id => Item.findById(id) )
           Ok(views.html.item_search(items, query, page))
+        } else if ("subscriber".equals(etype)) {
+          val subs = hits map ( id => Subscriber.findById(id) )
+          Ok(views.html.subscriber_search(subs, query, page))
+        } else {
+          NotFound("Unknown Search Entity Type")
         }
       }
     }
-  }
-
-  def items = Action {
-    Ok(views.html.item_index(Publisher.all))
   }
 
   def item(id: Long) = Action {
@@ -120,8 +148,8 @@ object Application extends Controller {
   }
 
   def itemFile(id: Long) = Action {
-    Item.findById(id).map( i => {
-      val itemPkg = Store.content(i)
+    Item.findById(id).map( item => {
+      val itemPkg = Store.content(item)
       SimpleResult(
         header = ResponseHeader(200, Map(CONTENT_TYPE -> itemPkg.mimetype)),
         body = Enumerator.fromStream(itemPkg.content)
@@ -157,7 +185,7 @@ object Application extends Controller {
       // create a transfer and pass to a conveyor
       val channel_id = request.queryString.get("channel").getOrElse(List("0L")).head.toLong
       conveyor ! Transfer.make(channel_id, item.id, -1L, Some("unknown"))
-      Ok(views.html.item(item))
+      Redirect(routes.Application.item(item.id))
     }
     ).getOrElse(NotFound("No such item"))
   }
@@ -179,10 +207,10 @@ object Application extends Controller {
   }
 
   def topicSubscribe(id: Long, mode: String) = Action { implicit request =>
-    Topic.findById(id).map( t => {
+    Topic.findById(id).map( topic => {
       val user = User.findByName(session.get("username").get).get
       val sub = Subscriber.findByUserId(user.id).get
-      Ok(views.html.topic_subscribe(id, sub.channelsWith(mode)))
+      Ok(views.html.topic_subscribe(topic, sub.channelsWith(mode)))
     }
     ).getOrElse(NotFound("No such topic"))
   }
@@ -193,8 +221,9 @@ object Application extends Controller {
       val sub = Subscriber.findByUserId(user.id).get
       // create a subscription and pass to a conveyor
       val channel_id = request.body.asFormUrlEncoded.get.get("channel").get.head.toLong
-      conveyor ! Subscription.make(sub.id, channel_id, id, "all")
-      Ok(views.html.item_index(Publisher.all))
+      val policy = request.body.asFormUrlEncoded.get.get("policy").get.head
+      conveyor ! Subscription.make(sub.id, channel_id, id, policy)
+      Redirect(routes.Application.topic(id))
     }
     ).getOrElse(NotFound("No such topic"))
   }
@@ -635,7 +664,9 @@ object Application extends Controller {
       errors => BadRequest(views.html.new_subscriber(errors)),
       value => {
         val user = User.findByName(session.get("username").get).get
-        Subscriber.create(user.id, value.category, value.name, value.visibility, value.keywords, value.link, value.logo, value.contact, value.swordService, value.terms, value.backFile)
+        val sub = Subscriber.make(user.id, value.category, value.name, value.visibility, value.keywords, value.link, value.logo, value.contact, value.swordService, value.terms, value.backFile)
+        // index vlaues
+        indexer ! sub
         Redirect(routes.Application.subscribers)
       }
     )
@@ -658,8 +689,8 @@ object Application extends Controller {
   )
 
   def channel(id: Long) = Action {
-    Channel.findById(id).map( c => 
-      Ok(views.html.channel(c))
+    Channel.findById(id).map( chan => 
+      Ok(views.html.channel(chan))
     ).getOrElse(NotFound("No such subscriber destination"))
   }
 
@@ -679,12 +710,14 @@ object Application extends Controller {
     )
   }
 
-  def subscription(id: Long) = Action {
-    Subscription.findById(id).map( s => {
-      val topic = Topic.findById(s.topic_id).get
-      Ok(views.html.subscription(s, topic))
-      }
-    ).getOrElse(NotFound("No such subscription"))
+  def cancelSubscription(id: Long) = Action {
+    Subscription.findById(id).map( sub => {
+      val topic = Topic.findById(sub.topic_id).get
+      Subscription.delete(id)
+      // if topic is now an orphan (no items or other subscriptions), remove it
+      if (topic.itemCount == 0 && topic.subscriptionCount == 0 && topic.transfers == 0) Topic.delete(topic.id)
+      Redirect(routes.Application.channel(sub.channel_id))
+    }).getOrElse(NotFound("No such subscription"))   
   }
 
   // Admin functions

@@ -3,15 +3,32 @@
 @import helper._
 
 @main("New Collection - TopicHub") {
-
-     <h2>Add a new collection</h2> 
-    @form(routes.Application.createCollection(pub.id)) {
-        
-        @select(collForm("ctype_id"), options(Ctype.mapView))
-        @select(collForm("pkgmap_id"), options(PackageMap.mapView))
-        @textarea(collForm("description")) 
-        @inputText(collForm("policy"))
-        
-        <input type="submit" value="Create">      
-    }
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span4">
+        @form(routes.Application.createCollection(pub.id)) {
+          @select(collForm("ctype_id"), options(Ctype.mapView))
+          @select(collForm("pkgmap_id"), options(PackageMap.mapView))
+          @textarea(collForm("description")) 
+          @inputText(collForm("policy"))
+          <input type="submit" value="Create">      
+       }
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Define a content collection</h2>
+          <p>All the content you publish to the hub must be placed in a <em>collection</em>.
+          You may define as many collections as you like, but items
+          in a given collection must share the first two attributes on the left:
+          a <em>content type</em> and a <em>package format</em>. If your content cannot be described by one of these choices,
+          you may not deposit it to the hub. Package format names abbreviate the kinds of files in a package; so
+          <code>mets-nlm</code> means that in addition to an article PDF, the package has a METS file and a metadata file
+          conforming to the NLM-DTD schema.</p>
+          <p>The description field is the collection name, and the policy describes any use or other restrictions
+          you wish to express. This policy will appear, e.g. in the SWORD service document for the collection.</p>
+          <p>When you have saved the collection definition, the hub will email you precise instructions on how to make deposits to it.</p> 
+        </div>
+      </div>
+    </div>
+  </div>
 }

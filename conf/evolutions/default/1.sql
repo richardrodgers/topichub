@@ -175,6 +175,21 @@ CREATE TABLE finder (
   PRIMARY KEY (id)
 );
 
+CREATE SEQUENCE validator_id_seq;
+CREATE TABLE validator (
+	id integer NOT NULL DEFAULT nextval('validator_id_seq'),
+	scheme_id integer,
+	description varchar(255) NOT NULL,
+	user_id varchar,
+	password varchar,
+	service_code varchar,
+	service_url varchar,
+	author varchar,
+	created timestamp,
+	FOREIGN KEY(scheme_id) REFERENCES scheme(id),
+  PRIMARY KEY (id)
+);
+
 CREATE SEQUENCE subscriber_id_seq;
 CREATE TABLE subscriber (
   id integer NOT NULL DEFAULT nextval('subscriber_id_seq'),
@@ -241,7 +256,7 @@ CREATE TABLE transfer (
   id integer NOT NULL DEFAULT nextval('transfer_id_seq'),
   channel_id integer,
   item_id integer,
-  subscription_id integer,
+  topic_id integer,
   transfer_addr varchar,
   created timestamp,
   state varchar(255),
@@ -257,6 +272,8 @@ DROP TABLE metadata;
 DROP SEQUENCE metadata_id_seq;
 DROP TABLE finder;
 DROP SEQUENCE finder_id_seq;
+DROP TABLE validator;
+DROP SEQUENCE validator_id_seq;
 DROP TABLE itemtopic;
 DROP SEQUENCE itemtopic_id_seq;
 DROP TABLE ctypescheme;

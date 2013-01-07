@@ -7,6 +7,7 @@
      <p itemprop="author">@item.metadataValues("author").mkString("; ")</p>
      <p>@item.metadataValue("citation")</p>
      <p>@HubUtils.pluralize(item.transfers, "transfer") since @HubUtils.fmtDate(item.created). Most recent @HubUtils.fmtDate(item.updated)</p>
+     <p>Appears in collection: <a href="@routes.Application.itemBrowse("collection", item.collection_id)">@Collection.findById(item.collection_id).get.description</a></p>
      <p>
         <a rel="tooltip" title="see article in new browser window" href="@routes.Application.itemView(item.id)" target="_blank" class="btn btn-primary btn-large">View &raquo;</a>
         <a rel="tooltip" title="download whole package to desktop" href="@routes.Application.itemFile(item.id)" class="btn btn-primary btn-large">Download &raquo;</a>

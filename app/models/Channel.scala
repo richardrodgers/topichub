@@ -30,6 +30,13 @@ case class Channel(id: Long, protocol: String, mode: String, direction: String, 
     }
   }
 
+  def subscriptionCount = {
+    DB.withConnection { implicit c =>
+      val count = SQL("select count(*) as c from subscription where channel_id = {id}").on('id -> id).apply.head
+      count[Long]("c")
+    }
+  }
+
   def recordTransfer {
     val newTrans = transfers + 1
     DB.withConnection { implicit c =>

@@ -1,13 +1,21 @@
+@*****************************************************************************
+ * Display information on a scheme. If a scheme validator is defined,        *
+ * expose a form to check user-supplied topics.                              *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
 @(scheme: Scheme, user: Option[User])
-
 @main("Scheme - TopicHub") {
   <div class="hero-unit">
   	<h3>~ Scheme ~</h3>
-     <h2>@scheme.schemeId</h2>
-     <p><a href="@scheme.link" target="_blank">@scheme.description</a></p>
-     <p>@HubUtils.pluralize(scheme.topicCount, "topic")</p>
-     @if(!user.isEmpty) {
-       <a rel="tooltip" title="manage scheme" href="@routes.Application.editScheme(scheme.id)" class="btn btn-primary btn-large pull-right">Manage &raquo;</a>
-     }
-   </div>
+    <h2>@scheme.schemeId</h2>
+    <p><a href="@scheme.link" target="_blank">@scheme.description</a></p>
+    <p>@HubUtils.pluralize(scheme.topicCount, "topic")</p>
+    @if(! scheme.validator.isEmpty) {
+       <p> Subscribe to new topic</p>
+    }
+    @if(! user.isEmpty) {
+      <a rel="tooltip" title="manage scheme" href="@routes.Application.editScheme(scheme.id)" class="btn btn-primary btn-large pull-right">Manage &raquo;</a>
+    }
+  </div>
 }

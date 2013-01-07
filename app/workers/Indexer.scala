@@ -34,12 +34,13 @@ import play.api.libs.ws.WS
 
 import store.{Store, StoredContent}
 
-import models.{Collection, Ctype, Finder, Item, PackageMap, Scheme, Topic}
+import models.{Collection, Ctype, Finder, Item, PackageMap, Scheme, Subscriber, Topic}
 
 class IndexWorker extends Actor {
   def receive = {
     case item: Item => Indexer.index(item, None)
     case topic: Topic => Indexer.index(topic)
+    case subscriber: Subscriber => Indexer.index(subscriber)
     case dtype: String => Indexer.reindex(dtype)
     case _ => println("bar")
   }
@@ -276,6 +277,19 @@ object Indexer {
         index0(item, new Cataloger(pkgmap, Store.content(item)))
       }
     }
+  }
+
+  def index(subscriber: Subscriber) = {
+    // minimal indexing: dbId, schemeId, topicId, and title
+    val data = Map("dbId" -> toJson(subscriber.id),
+                   "category" -> toJson(subscriber.category),
+                   "keywords" -> toJson(subscriber.keywords),
+                   "name" -> toJson(subscriber.name))
+    val jdata = stringify(toJson(data))
+    // debug
+    println("Subscriber index: " + jdata)
+    val req = WS.url(indexSvc + "subscriber/" + subscriber.id)
+    req.put(jdata)
   }
 
   private def index0(item: Item, cataloger: Cataloger) = {

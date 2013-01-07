@@ -19,7 +19,7 @@ import anorm.SQL
   * @author richardrodgers
   */
 
-case class Transfer(id: Long, channel_id: Long, item_id: Long, subscription_id: Long, transfer_addr: Option[String],
+case class Transfer(id: Long, channel_id: Long, item_id: Long, topic_id: Long, transfer_addr: Option[String],
                     created: Date, state: String, modified: Date) {
 
   def updateState(state: String) {
@@ -39,10 +39,10 @@ case class Transfer(id: Long, channel_id: Long, item_id: Long, subscription_id: 
 object Transfer {
 
   val transfer = {
-    get[Long]("id") ~ get[Long]("channel_id") ~ get[Long]("item_id") ~ get[Long]("subscription_id") ~ get[Option[String]]("transfer_addr") ~ 
+    get[Long]("id") ~ get[Long]("channel_id") ~ get[Long]("item_id") ~ get[Long]("topic_id") ~ get[Option[String]]("transfer_addr") ~ 
     get[Date]("created") ~ get[String]("state") ~ get[Date]("modified") map {
-      case id ~ channel_id ~ item_id ~ subscription_id ~ transfer_addr ~ created ~ state ~ modified => 
-        Transfer(id, channel_id, item_id, subscription_id, transfer_addr, created, state, modified)
+      case id ~ channel_id ~ item_id ~ topic_id ~ transfer_addr ~ created ~ state ~ modified => 
+        Transfer(id, channel_id, item_id, topic_id, transfer_addr, created, state, modified)
     }
   }
 
@@ -52,10 +52,10 @@ object Transfer {
     }    
   }
 
-  def create(channel_id: Long, item_id: Long, subscription_id: Long, transfer_addr: Option[String]) = {
+  def create(channel_id: Long, item_id: Long, topic_id: Long, transfer_addr: Option[String]) = {
 		DB.withConnection { implicit c =>
-			SQL("insert into transfer (channel_id, item_id, subscription_id, transfer_addr, created, state, modified) values ({channel_id}, {item_id}, {subscription_id}, {transfer_addr}, {created}, {state}, {modified})")
-      .on('channel_id -> channel_id, 'item_id -> item_id, 'subscription_id -> subscription_id, 'transfer_addr -> transfer_addr, 'created -> new Date, 'state -> "new", 'modified -> new Date).executeInsert()
+			SQL("insert into transfer (channel_id, item_id, topic_id, transfer_addr, created, state, modified) values ({channel_id}, {item_id}, {topic_id}, {transfer_addr}, {created}, {state}, {modified})")
+      .on('channel_id -> channel_id, 'item_id -> item_id, 'topic_id -> topic_id, 'transfer_addr -> transfer_addr, 'created -> new Date, 'state -> "new", 'modified -> new Date).executeInsert()
 		}
   }
 
@@ -65,8 +65,8 @@ object Transfer {
     }
   }
 
-  def make(channel_id: Long, item_id: Long, subscription_id: Long, transfer_addr: Option[String]): Transfer = {
-    findById(create(channel_id, item_id, subscription_id, transfer_addr).get).get
+  def make(channel_id: Long, item_id: Long, topic_id: Long, transfer_addr: Option[String]): Transfer = {
+    findById(create(channel_id, item_id, topic_id, transfer_addr).get).get
   }
 
   def delete(id: Long) {

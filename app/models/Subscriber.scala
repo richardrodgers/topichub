@@ -127,11 +127,16 @@ object Subscriber {
   }
 
   def create(user_id: Long, category: String, name: String, visibility: String, keywords: String, link: Option[String],
-             logo: Option[String], contact: String, swordService: String, terms: String, backFile: String) {
+             logo: Option[String], contact: String, swordService: String, terms: String, backFile: String) = {
 		DB.withConnection { implicit c =>
 			SQL("insert into subscriber (user_id, category, name, visibility, keywords, link, logo, contact, sword_service, terms, back_file, created) values ({user_id}, {category}, {name}, {visibility}, {keywords}, {link}, {logo}, {contact}, {swordService}, {terms}, {backFile}, {created})")
-      .on('user_id -> user_id, 'category -> category, 'name -> name, 'visibility -> visibility, 'keywords -> keywords, 'link -> link, 'logo -> logo, 'contact -> contact, 'swordService -> swordService, 'terms -> terms, 'backFile -> backFile, 'created -> new Date).executeUpdate()
+      .on('user_id -> user_id, 'category -> category, 'name -> name, 'visibility -> visibility, 'keywords -> keywords, 'link -> link, 'logo -> logo, 'contact -> contact, 'swordService -> swordService, 'terms -> terms, 'backFile -> backFile, 'created -> new Date).executeInsert()
 		}
+  }
+
+  def make(user_id: Long, category: String, name: String, visibility: String, keywords: String, link: Option[String],
+           logo: Option[String], contact: String, swordService: String, terms: String, backFile: String) = {
+    findById(create(user_id, category, name, visibility, keywords, link, logo, contact, swordService, terms, backFile).get).get
   }
 
   def delete(id: Long) {
