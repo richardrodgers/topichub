@@ -936,7 +936,7 @@ object Application extends Controller {
     // only create if not already defined
     if (Scheme.findByName(schemeId).isEmpty) {
       Scheme.create(schemeId, forName(jss, "gentype"), forName(jss, "category"),
-                    forName(jss, "description"), oforName(jss, "home"), oforName(jss, "logo"))
+                    forName(jss, "description"), oforName(jss, "link"), oforName(jss, "logo"))
       val scheme = Scheme.findByName(schemeId).get
       val finders = (jss \ "finders")
       procJsArray(finders, 0, finderFromCmodel(scheme.id))
@@ -976,7 +976,7 @@ object Application extends Controller {
     val pkgmapId = forName(jsp, "pkgmapId")
     // only create if not already defined
     if (PackageMap.findByName(pkgmapId).isEmpty) {
-      PackageMap.create(pkgmapId, forName(jsp, "description"), oforName(jsp, "swordurl"))
+      PackageMap.create(pkgmapId, forName(jsp, "description"), oforName(jsp, "swordUrl"))
       val pkgmap = PackageMap.findByName(pkgmapId).get
       val mappings = (jsp \ "mappings")
       procJsArray(mappings, 0, pmMapFromCmodel(pkgmap))
