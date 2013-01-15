@@ -1,0 +1,21 @@
+@*****************************************************************************
+ * Display form to create or edit a validator for passed scheme              *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(schemeId: String, valForm: Form[Validator])
+@import helper._
+
+@main("New Validator - TopicHub") {
+  <h2>Add a validator</h2> 
+  @form(routes.Application.createValidator(schemeId)) {      
+    @select(valForm("scheme_id"), options(Scheme.mapView)) 
+    @textarea(valForm("description")) 
+    @inputText(valForm("userId")) 
+    @inputText(valForm("password")) 
+    @inputText(valForm("serviceCode")) 
+    @inputText(valForm("serviceUrl")) 
+    @inputText(valForm("author"))       
+    <input type="submit" value="Create">
+  }
+}

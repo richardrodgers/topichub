@@ -1,16 +1,16 @@
 @*****************************************************************************
- * Subscribe to the selected topic, specifying a channel and a policy.       *
+ * Subscribe to the selected 'unmanifested' topic, specifying a channel      *
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(topic: Topic, channels: List[Channel])
+@(scheme: Scheme, topicId: String, topicName: String, channels: List[Channel])
 
 @import helper._
 
-@main("Topic Subscribe - TopicHub") {
-  <h3>Topic '@topic.name' currently has @HubUtils.pluralize(topic.itemCount, "item")</h3>
+@main("Topic Presubscribe - TopicHub") {
+  <h3>Topic '@topicName' @topicId currently undefined</h3>
   <h4>Select a destination:</h4> 
-  <form action="@routes.Application.subscribe(topic.id)" method="POST">
+  <form action="@routes.Application.presubscribe(scheme.id, topicId, topicName)" method="POST">
     <select name="channel">
     @channels.map { channel =>
       <option value="@channel.id"/>&nbsp@channel.description</option>

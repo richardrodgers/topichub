@@ -1,0 +1,22 @@
+@*****************************************************************************
+ * Display validation result for a submitted topic, allowing subscription    *
+ * option if user is a subscriber and topic is valid.                        *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(scheme: Scheme, topicId: String, res: Either[String, String], user: Option[User])
+@import helper._
+
+@main("Topic Validation - TopicHub") {
+  @if(res.isLeft) {
+    <h3>@topicId is not a recognized identifier in the scheme '@scheme.description'</h3>
+    <h4>Message: @res.left.get</h4>
+  } else {
+    <h3>Topic '@topicId' is a known identifier in the scheme '@scheme.description' : @res.right.get</h3>
+    @if(!user.isEmpty) {
+      <a rel="tooltip" title="If items appear for this topic, deliver them to my repository" href="@routes.Application.topicPresub(scheme.id, topicId, res.right.get, "package")"  class="btn btn-primary btn-large">Subscribe &raquo;</a>
+      <a rel="tooltip" title="If items appear for this topic, deliver them to my repository" href="@routes.Application.topicPresub(scheme.id, topicId, res.right.get, "alert")"  class="btn btn-primary btn-large pull-right">Notify Me &raquo;</a>
+    }
+  }
+  <p>Return to <a href="@routes.Application.scheme(scheme.id)">@scheme.description</a></p>
+}

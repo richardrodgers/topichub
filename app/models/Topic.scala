@@ -142,7 +142,7 @@ object Topic {
     }  
   }
 
-  def create(scheme_id: Long, topicId: String, name: String) {
+  def create(scheme_id: Long, topicId: String, name: String) = {
     val created = new Date
     val updated = created
 		DB.withConnection { implicit c =>
@@ -153,6 +153,10 @@ object Topic {
         """
       ).on('scheme_id -> scheme_id, 'topicId -> topicId, 'name -> name, 'created -> created, 'updated -> updated, 'transfers -> 0).executeInsert()
 		}
+  }
+
+  def make(scheme_id: Long, topicId: String, name: String): Topic = {
+    findById(create(scheme_id, topicId, name).get).get
   }
 
   def forSchemeAndId(schemeId: String, topicId: String): Option[Topic] = {

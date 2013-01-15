@@ -85,7 +85,7 @@ case class LocalZipFile(pkg: File, md5: String) extends StoredContent {
 object S3Store extends ContentStore {
   // Assumes format 'http://bucketname.s3.amazonaws.com'
   val url = Play.configuration.getString("hub.item.store").get
-  val bucket = url.substring(7, url.indexOf("."))
+  val bucket = url.substring(7, url.indexOf(".s3.amazonaws.com"))
   val accessKey = Play.configuration.getString("hub.aws.accesskey").get
   val secretKey = Play.configuration.getString("hub.aws.secretkey").get
   val s3 = new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey))

@@ -138,11 +138,13 @@ object HubUtils {
     }
   }
 
-  def interpolate(token: String) = {
+  def interpolate(token: String, full: Boolean = false) = {
     val start = token.indexOf("${")
     if (start >= 0) {
       val end = token.indexOf("}", start + 2)
-      Play.configuration.getString(token.substring(start + 2, end)).get
+      if (full) {
+        token.substring(0, start) + Play.configuration.getString(token.substring(start + 2, end)).get + token.substring(end + 1)
+      } else Play.configuration.getString(token.substring(start + 2, end)).get
     } else
       token
   }

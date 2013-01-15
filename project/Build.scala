@@ -14,6 +14,7 @@ object ApplicationBuild extends Build {
       "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
       "org.apache.httpcomponents" % "httpmime" % "4.1.2",
       "com.amazonaws" % "aws-java-sdk" % "1.3.27"
+      //"be.objectify" %% "deadbolt-scala" % "2.0-SNAPSHOT"
     )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(

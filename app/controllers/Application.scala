@@ -215,6 +215,39 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such topic"))
   }
 
+  def topicValidate(scheme_id: Long) = Action { implicit request => 
+    Scheme.findById(scheme_id).map( scheme => {
+       val userName = session.get("username").getOrElse("")
+       val topic_id = request.body.asFormUrlEncoded.get.get("topic").get.head
+       checkTopic(scheme, topic_id, userName)
+    }
+    ).getOrElse(NotFound("No such scheme"))
+  }
+
+  private def checkTopic(scheme: Scheme, topicId: String, userName: String): Result = {
+    val topic = Topic.forSchemeAndId(scheme.schemeId, topicId)
+    if (! topic.isEmpty)
+      // just redirect to topic page
+      Redirect(routes.Application.topic(topic.get.id))
+    else {
+      // not a known topic in this scheme - attempt validation  
+      val validator = scheme.validator
+      val res = if (! validator.isEmpty) validator.get.validate(topicId) else Left("No validator found")
+      Ok(views.html.topic_validate(scheme, topicId, res, User.findByName(userName))) 
+    }
+  }
+
+  def topicPresub(sid: Long, topicId: String, name: String, mode: String) = Action { implicit request =>
+    Scheme.findById(sid).map( scheme => {
+      val user = User.findByName(session.get("username").get).get
+      val sub = Subscriber.findByUserId(user.id).get
+      Ok(views.html.topic_presub(scheme, topicId, name, sub.channelsWith(mode)))
+    }
+    ).getOrElse(NotFound("No such Scheme"))
+   // val topic = Topic.make(sid, topicId, name)
+   // Redirect(routes.Application.subscribe(topic.id))
+  }
+
   def subscribe(id: Long) = Action { implicit request =>
     Topic.findById(id).map( t => {
       val user = User.findByName(session.get("username").get).get
@@ -226,6 +259,22 @@ object Application extends Controller {
       Redirect(routes.Application.topic(id))
     }
     ).getOrElse(NotFound("No such topic"))
+  }
+
+  def presubscribe(sid: Long, topicId: String, topicName: String) = Action { implicit request =>
+    Scheme.findById(sid).map( scheme => {
+      val user = User.findByName(session.get("username").get).get
+      val sub = Subscriber.findByUserId(user.id).get
+      // create a subscription and pass to a conveyor
+      val channel_id = request.body.asFormUrlEncoded.get.get("channel").get.head.toLong
+      val policy = request.body.asFormUrlEncoded.get.get("policy").get.head
+      val topic = Topic.make(sid, topicId, topicName)
+      // debateable whether to index an unmanifested topic
+      indexer ! topic
+      conveyor ! Subscription.make(sub.id, channel_id, topic.id, policy)
+      Redirect(routes.Application.topic(topic.id))
+    }
+    ).getOrElse(NotFound("No such scheme"))
   }
 
   val pubForm = Form(
@@ -590,6 +639,46 @@ object Application extends Controller {
     Ok(views.html.test_finder(finderTestForm, idHits)) }
   }
 
+  val validatorForm = Form(
+    mapping(
+      "id" -> ignored(0L),
+      "scheme_id" -> longNumber,
+      "description" -> nonEmptyText,
+      "userId" -> nonEmptyText,
+      "password" -> nonEmptyText,
+      "serviceCode" -> nonEmptyText,
+      "serviceUrl" -> nonEmptyText,
+      "author" -> nonEmptyText,
+      "created" -> ignored(new Date)
+    )(Validator.apply)(Validator.unapply)
+  )
+
+
+  def newValidator(schemeId: String) = Action {
+    Scheme.findByName(schemeId).map( scheme =>
+      Ok(views.html.new_validator(schemeId, validatorForm))
+    ).getOrElse(NotFound("Unknown scheme"))
+  }
+
+  def createValidator(schemeId: String) = Action { implicit request =>
+    Scheme.findByName(schemeId).map( scheme =>
+      validatorForm.bindFromRequest.fold(
+        errors => BadRequest(views.html.new_validator(schemeId, errors)),
+        value => {
+          Validator.create(scheme.id, value.description, value.userId, value.password, value.serviceCode, value.serviceUrl, value.author)
+          Redirect(routes.Application.finders(schemeId))
+        }
+      )
+    ).getOrElse(NotFound)
+  }
+
+  def deleteValidator(schemeId: String, id: Long) = Action {
+    Scheme.findByName(schemeId).map( scheme => {
+      Validator.delete(id)
+      Ok(views.html.finder_list(Finder.findByScheme(scheme.id)))
+    }
+    ).getOrElse(NotFound("Unknown scheme"))
+  }
 
 /*
   def runTestFinder = Action { implicit request =>
@@ -746,7 +835,8 @@ object Application extends Controller {
           "description" -> toJson(s.description),
           "link" -> toJson(s.link),
           "logo" -> toJson(s.logo),
-          "finders" -> jsonFinders(s.id)
+          "finders" -> jsonFinders(s.id),
+          "validators" -> jsonValidators(s.id)
       )
     )
     toJson(msg)
@@ -760,6 +850,19 @@ object Application extends Controller {
           "idKey" -> toJson(f.idKey),
           "idLabel" -> toJson(f.idLabel),
           "author" -> toJson(f.author)
+      )
+    )
+    toJson(msg)
+  }
+
+  def jsonValidators(sid: Long) = {
+    val msg = Validator.findByScheme(sid).map ( v =>
+      Map("description" -> toJson(v.description),
+          "userId" -> toJson(v.userId),
+          "password" -> toJson(v.password),
+          "serviceCode" -> toJson(v.serviceCode),
+          "serviceUrl" -> toJson(v.serviceUrl),
+          "author" -> toJson(v.author)
       )
     )
     toJson(msg)
@@ -837,12 +940,19 @@ object Application extends Controller {
       val scheme = Scheme.findByName(schemeId).get
       val finders = (jss \ "finders")
       procJsArray(finders, 0, finderFromCmodel(scheme.id))
+      val validators = (jss \ "validators")
+      procJsArray(validators, 0, validatorFromCmodel(scheme.id))
     }
   }
 
   def finderFromCmodel(scheme_id: Long)(jsf: JsValue) {
     Finder.create(scheme_id, forName(jsf, "description"), forName(jsf, "cardinality"), forName(jsf, "format"),
                   forName(jsf, "idKey"), forName(jsf, "idLabel"), forName(jsf, "author"))
+  }
+
+  def validatorFromCmodel(scheme_id: Long)(jsf: JsValue) {
+    Validator.create(scheme_id, forName(jsf, "description"), forName(jsf, "userId"), forName(jsf, "password"),
+                  forName(jsf, "serviceCode"), forName(jsf, "serviceUrl"), forName(jsf, "author"))
   }
 
   def ctypeFromCmodel(jsc: JsValue) {

@@ -35,6 +35,14 @@ POST    /testfinder                 controllers.Application.runTestFinder
 POST    /scheme/:sid                controllers.Application.createFinder(sid: String)
 GET     /scheme/:sid/finder/:id/delete  controllers.Application.deleteFinder(sid: String, id: Long)
 
+# Validator pages
+
+GET     /scheme/:sid/createvalidator       controllers.Application.newValidator(sid: String)
+#GET     /testvalidator                  controllers.Application.testValidator
+#POST    /testvalidator                  controllers.Application.runTestValidator
+POST    /scheme/:sid/validator             controllers.Application.createValidator(sid: String)
+GET     /scheme/:sid/validator/:id/delete  controllers.Application.deleteValidator(sid: String, id: Long)
+
 # Ctype pages
 GET     /ctypes                     controllers.Application.ctypes
 GET     /ctype/:id                  controllers.Application.ctype(id: Long)
@@ -66,8 +74,11 @@ GET     /topics                      controllers.Application.topics
 #GET     /topics/search               controllers.Application.topicSearch
 GET     /topics/browse               controllers.Application.topicBrowse(id: Long, page: Int ?= 0)
 GET     /topic/:id                   controllers.Application.topic(id: Long)
-GET     /topic/:id/subscribe/        controllers.Application.topicSubscribe(id: Long, mode: String)
-POST    /topic/:id/subscribe/        controllers.Application.subscribe(id: Long)
+GET     /topic/:id/subscribe         controllers.Application.topicSubscribe(id: Long, mode: String)
+POST    /topic/:id/subscribe         controllers.Application.subscribe(id: Long)
+POST    /topic/:sid/presubscribe     controllers.Application.presubscribe(sid: Long, topciId: String, name: String)
+POST    /topic/:sid/validate         controllers.Application.topicValidate(sid: Long)
+GET     /topic/:sid/presub           controllers.Application.topicPresub(sid: Long, topicId: String, name: String, mode: String)
 
 # Subscriber pages
 GET     /subscribers                controllers.Application.subscribers
@@ -77,7 +88,7 @@ GET     /subscriber/:id/edit        controllers.Application.editSubscriber(id: L
 GET     /subscriber/:id             controllers.Application.subscriber(id: Long)
 GET     /channel/:id                controllers.Application.channel(id: Long)
 GET     /subscription/:id/cancel    controllers.Application.cancelSubscription(id: Long)
-GET     /channels/:sid/create        controllers.Application.newChannel(sid: Long)
+GET     /channels/:sid/create       controllers.Application.newChannel(sid: Long)
 POST    /subscribers                controllers.Application.createSubscriber
 POST    /subscriber/:sid/channels   controllers.Application.createChannel(sid: Long)
 

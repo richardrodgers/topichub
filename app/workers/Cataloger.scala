@@ -122,7 +122,8 @@ class Cataloger(pkgmap: PackageMap, content: StoredContent) {
           h match {
             case Left(x) => val regX(l) = x.attribute.value; l
             //case Right(x) => regX findFirstIn x.firstChild.get.item().value
-            case Right(x) => val regX(m) = x.firstChild.get.item().value; m
+            case Right(x) => val regX(m) = concatText(x.children.asInstanceOf[ImmutableArray[Text]]); m
+            //case Right(x) => val regX(m) = x.firstChild.get.item().value; m
           }
         )
         //idHits = theHits.flatten.toSeq
@@ -131,7 +132,8 @@ class Cataloger(pkgmap: PackageMap, content: StoredContent) {
         val theHits2 = hits map ( h =>
             h match {
               case Left(x) => x.attribute.value
-              case Right(x) => x.firstChild.get.item().value
+              case Right(x) => concatText(x.children.asInstanceOf[ImmutableArray[Text]])
+              // case Right(x) => x.firstChild.get.item().value
             }
           )
         idHits = theHits2.toSeq
@@ -175,6 +177,12 @@ class Cataloger(pkgmap: PackageMap, content: StoredContent) {
         lblHits = List("No label")
     //}
     (idHits, lblHits)
+  }
+
+  private def concatText(parts: ImmutableArray[Text]) = {
+    val sb = new StringBuilder
+    for (t <- parts) sb.append(t.get.value)
+    sb.toString
   }
 
   def createTopic(scheme: Scheme, topicId: String, title: String): Topic = {

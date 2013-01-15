@@ -1,3 +1,9 @@
+@*****************************************************************************
+ * Display channel information (labelled 'Destination'), including any       *
+ * subscriptions belinging to it.                                            *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
 @(channel: Channel)
 
 @main("Destination - TopicHub") {
@@ -16,9 +22,9 @@
        @defining(Topic.findById(sub.topic_id).get) { topic => 
          <li>
          <a rel="tooltip" title="cancel this subscription" href="@routes.Application.cancelSubscription(sub.id)" class="btn btn-primary btn-mini">Cancel &raquo;</a>
-			   <a href="@routes.Application.topic(topic.id)">@topic.name</a> (@topic.topicId) Created: @HubUtils.fmtDate(sub.created) @HubUtils.pluralize(sub.transfers, "transfer")
-			   </li>
-			 }
+			 <a href="@routes.Application.topic(topic.id)">@topic.name</a> (@topic.topicId) Created: @HubUtils.fmtDate(sub.created) @HubUtils.pluralize(sub.transfers, "transfer")
+		  </li>
+	   }
      }
      </ul>
 }
