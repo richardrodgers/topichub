@@ -72,6 +72,7 @@ object SwordServer extends Controller {
       ).getOrElse( {
         val hdrMd5 = request.headers.get("content-md5").getOrElse(null)
         val item = uploadPackage(request.body, coll, hdrMd5)
+        //if (item == null) println("uploadPackage failed")
         SimpleResult (
           header = ResponseHeader(201, Map(CONTENT_TYPE -> "application/atom+xml; charset=\"utf-8\"")),
           body = Enumerator(entryDoc(item))
@@ -83,7 +84,7 @@ object SwordServer extends Controller {
   private def checkHeaders(headers: Headers): Option[(Int, SwordError.type)] = {
     val reportedLength = headers.get("content-length")
     if (reportedLength != null) {
-      println("Found CL")
+      //println("Found CL")
       val repLen = reportedLength.get.toInt
       if (maxUploadSize > 0 && (repLen / 1024) > maxUploadSize) {
         (400, SwordError.MaxUploadSizeExceeded)

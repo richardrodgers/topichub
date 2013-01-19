@@ -15,7 +15,7 @@ import play.api.mvc.Results._
 import play.api.libs.ws.WS
 
 import controllers.{Application, SwordClient}
-import models.{Channel, Item, Transfer, Subscription, Topic}
+import models.{Channel, Collection, Ctype, Item, PackageMap, Publisher, Transfer, Subscription, Topic, User}
 import models.HubUtils._
 
 /** Conveyor delivers content or data to specified targets.
@@ -30,6 +30,7 @@ class ConveyorWorker extends Actor {
     case transfer: Transfer => Conveyor.transfer(transfer)
     case subscription: Subscription => Conveyor.fulfill(subscription)
     case item: Item => Conveyor.newItem(item)
+    case collection: Collection => Conveyor.newCollection(collection)
     case _ => println("Unknown task")
   }
 }
@@ -79,6 +80,16 @@ object  Conveyor {
     })
   }
 
+  def newCollection(coll: Collection) {
+    // send out email instructions to the publisher
+    val pub = Publisher.findById(coll.publisher_id).get
+    val user = User.findById(pub.userId).get
+    val ctype = Ctype.findById(coll.ctype_id).get
+    val pkgMap = PackageMap.findById(coll.pkgmap_id).get
+    val msg = views.txt.email.new_collection(pub, coll, ctype, pkgMap, hubUrl)
+    sendMailGun("noreply@topichub.org", user.email, "TopicHub - Your new Collection", msg.body)
+  }
+
   private def transferItem(transfer: Transfer, item: Item, channel: Channel, topic: Option[Topic]) {
     // only transfer options currently supported are SWORD deposit or email notification
     channel.protocol match {
@@ -107,14 +118,11 @@ object  Conveyor {
     val subj = if (! topic.isEmpty) "TopicHub Alert - new in: " + topic.get.name
                else "TopicHub Item Reminder"
     entity.addPart("subject", new StringBody(subj, cset))
-    val text = "Now available on TopicHub:\n" + 
-               "Title: " + item.metadataValue("title") + "\n" +
-               "Authors: " + item.metadataValues("author").mkString(";") + "\n" +
-               "Link: " + hubUrl + Application.itemUrl(item.id)
-    entity.addPart("text", new StringBody(text, cset))
+    val text = views.txt.email.item_notify(item, hubUrl + Application.itemUrl(item.id))
+    entity.addPart("text", new StringBody(text.body, cset))
     val out = new ByteArrayOutputStream
     entity.writeTo(out)
-    //println("about to email: " + emailSvc + " userId: " + interpolate(channel.userId) + " pwd: " + interpolate(channel.password))
+    println("about to email: '" + emailSvc + "' userId: '" + interpolate(channel.userId) + "' pwd: '" + interpolate(channel.password) + "'")
     val header = (entity.getContentType.getName, entity.getContentType.getValue)
     val req = WS.url(emailSvc)
     .withHeaders(header)
@@ -141,4 +149,23 @@ object  Conveyor {
     .withAuth("api", mgApiKey, AuthScheme.BASIC)
     val resp = req.post(out.toByteArray()).await.get
   }
+
+    // also directly wired into Mailgun API - need abstraction
+  def sendMailGun(from: String, to: String, subject: String, msg: String) {
+
+    val entity = new MultipartEntity()
+    entity.addPart("from", new StringBody(from, cset))
+    entity.addPart("to", new StringBody(to, cset))
+    entity.addPart("subject", new StringBody(subject, cset))
+    entity.addPart("text", new StringBody(msg, cset))
+    val out = new ByteArrayOutputStream
+    entity.writeTo(out)
+    //println("about to email: " + emailSvc)
+    val header = (entity.getContentType.getName, entity.getContentType.getValue)
+    val req = WS.url(emailSvc)
+    .withHeaders(header)
+    .withAuth("api", mgApiKey, AuthScheme.BASIC)
+    val resp = req.post(out.toByteArray()).await.get
+  }
+
 }

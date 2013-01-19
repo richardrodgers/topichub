@@ -5,7 +5,7 @@
      <h3>~ @item.contentType.get.ctypeId ~</h3>
      <h2 itemprop="name">@item.metadataValue("title")</h2>
      <p itemprop="author">@item.metadataValues("author").mkString("; ")</p>
-     <p>@item.metadataValue("citation")</p>
+     <p><span class="muted">@item.metadataValue("citation")</span></p>
      <p>@HubUtils.pluralize(item.transfers, "transfer") since @HubUtils.fmtDate(item.created). Most recent @HubUtils.fmtDate(item.updated)</p>
      <p>Appears in collection: <a href="@routes.Application.itemBrowse("collection", item.collection_id)">@Collection.findById(item.collection_id).get.description</a></p>
      <p>

@@ -368,7 +368,7 @@ object Application extends Controller {
           val chan = Channel.make("sword", "package", "inbound", pub.pubId + ":" + coll.description + " deposits", "user", "password", "/sword/collection/" + coll.id)
           // make collection the channel owner
           chan.setOwner("coll", coll.id)
-          // TODO - email publisher this channel info
+          conveyor ! coll
           Redirect(routes.Application.publisher(id))
         }
       )

@@ -1,0 +1,12 @@
+@*****************************************************************************
+ * Email template used to notify subscribers of new items                    *
+ * Copyright 2013 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(item: Item, itemUrl: String)
+
+Now available on TopicHub:
+
+Title: @item.metadataValue("title")
+Authors: @item.metadataValues("author").mkString(";")
+Link: @itemUrl

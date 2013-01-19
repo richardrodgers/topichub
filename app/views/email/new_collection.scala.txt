@@ -1,0 +1,33 @@
+@*****************************************************************************
+ * Email template used to convey to publishers specific instructions         *
+ * for depositing content to newly created collections                       *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(pub: Publisher, coll: Collection, ctype: Ctype, pkgMap: PackageMap, hubUrl: String)
+
+Dear @pub.name:
+
+Thank you for creating the new @ctype.ctypeId collection '@coll.description' of @ctype.description.
+To submit content to this collection, follow these two easy steps:
+
+First, for each @ctype.ctypeId you wish to deposit, create a package in the format: @pkgMap.description
+Put all files into a 'zip' archive file - let's call this 'package1.zip'
+
+Then, using a SWORD client, deposit the package to this URL:
+
+@hubUrl@routes.SwordServer.processDeposit(coll.id)
+
+Be sure that your client specifies the package type: @pkgMap.swordUrl
+
+If you do not have a SWORD client available, you may still deposit a package
+using the 'curl' command-line tool with the invocation:
+
+curl -i --data-binary '@@package1.zip' 
+     -H 'Content-Type: application/zip' -H 'X-Packaging: @pkgMap.swordUrl'
+     @hubUrl@routes.SwordServer.processDeposit(coll.id)
+
+We look forward to your contributions to '@coll.description',
+and the subscribers thank you in advance,
+
+TopicHub
