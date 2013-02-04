@@ -1,9 +1,14 @@
+@*****************************************************************************
+ * Login page for users                                                      *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
 @(form: Form[(String,String)])(implicit flash: Flash)
 
 @main("Login - TopicHub") {
 
      <h2>Login:</h2>
-     @helper.form(routes.Security.authenticate) {
+     @helper.form(routes.AuthN.authenticate) {
         <p>
           <input type="text" name="username" placeholder="Username" id="username" value="@form("username").value">
         </p>
@@ -14,6 +19,6 @@
           <button type="submit" id="loginbutton">Login</button>
         </p>
      }
-     <p>If you do not have an account, please <a href="@routes.Security.startregister">register</a></p>
-     <p>Forgot or lost password? Ask the hub to <a href="@routes.Security.forgot">send</a> it.</p>
+     <p>If you do not have an account, please <a href="@routes.AuthN.startregister">register</a></p>
+     <p>Forgot or lost password? Ask the hub to <a href="@routes.AuthN.forgot">send</a> it.</p>
 }

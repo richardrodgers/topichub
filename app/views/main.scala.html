@@ -1,3 +1,8 @@
+@*****************************************************************************
+ * Main HTML template for TopicHub pages. Included by all pages              *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
 @(title: String)(content: Html)
 
 <!DOCTYPE html>
@@ -42,20 +47,11 @@
                       <option value="subscriber">Subscriber</option>
                     </select>
                 	  <input type="text" name="query" class="span2 search-query" placeholder="search...">
-                <!--    <input class="span2" id="appendedInputButton" name="etype" type="hidden">
-                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
-                      <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                      <li><a href="#">topic</a></li>
-                      <li><a href="#">item</a></li>
-                      <li><a href="#">subscriber</a></li>
-                    </ul>   -->
                 	  <button type="submit" class="btn"><i class="icon-envelope">Go</i></button>
                   </div></form>
                 </li>
-                <li><a href="@routes.Security.login">Login</a></li>
-                <li><a href="@routes.Security.logout">Logout</a></li>
+                <li><a href="@routes.AuthN.login">Login</a></li>
+                <li><a href="@routes.AuthN.logout">Logout</a></li>
               </ul>
             </div><!--/.nav-collapse -->
           </div>

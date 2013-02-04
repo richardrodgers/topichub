@@ -4,7 +4,9 @@
  */
 package controllers
 
-import scala.xml.{NodeSeq, XML}
+import akka.actor.Props
+
+//import scala.xml.{NodeSeq, XML}
 
 import org.joda.time.format.ISODateTimeFormat
 
@@ -13,16 +15,30 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc._
+import play.api.mvc.Security._
 import play.api.mvc.Results._
 import play.api.libs.concurrent._
 import play.api.Play.current
 
 import models.{Subscriber, User}
+import workers.{Conveyor, ConveyorWorker}
 
-object Security extends Controller {
+trait Secured {
+   def username(request: RequestHeader) = request.session.get("username")
+   def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.AuthN.login)
+   def isAuthenticated(f: => String => Request[AnyContent] => Result) = {
+      Authenticated(username, onUnauthorized) { user =>
+         Action(request => f(user)(request))
+      }
+   }
+}
+
+object AuthN extends Controller {
 
   val hubNs = "http://topichub"
   val iso8601 = ISODateTimeFormat.dateTime
+
+  val conveyor2 = Akka.system.actorOf(Props[ConveyorWorker], name="conveyor2")
 
   val loginForm = Form(
     tuple(
@@ -45,13 +61,25 @@ object Security extends Controller {
 
   val forgotForm = Form(
     tuple(
-      "email" -> text,
-      "again" -> text
+      "username" -> text,
+      "email" -> text
     ) verifying("Invalid Email address", result => true)
   )
 
   def forgot = Action { implicit request =>
     Ok(views.html.forgot(forgotForm))
+  }
+
+  def remind = Action { implicit request =>
+      forgotForm.bindFromRequest.fold(
+      formWithErrors => BadRequest(views.html.forgot(formWithErrors)),
+      user => {
+        val remUser = User.findByName(user._1).get
+        val sub = Subscriber.findByUserId(remUser.id).get
+        conveyor2 ! sub
+        Redirect(routes.Application.index)
+      }
+    )    
   }
 
   def authenticate = Action { implicit request =>

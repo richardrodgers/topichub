@@ -1,9 +1,17 @@
+@*****************************************************************************
+ * Page for users who have forgotten their email - form                      *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
 @(form: Form[(String,String)])(implicit flash: Flash)
 
 @main("Forgot - TopicHub") {
 
-     <h2>Please enter Email address:</h2>
-     @helper.form(routes.Security.authenticate) {
+     <h2>Please enter user name and email address:</h2>
+     @helper.form(routes.AuthN.remind) {
+        <p>
+          <input type="text" name="username" placeholder="UserName" id="username" value="@form("username").value">
+        </p>
         <p>
           <input type="text" name="email" placeholder="Email Address" id="email" value="@form("email").value">
         </p>

@@ -5,6 +5,7 @@
 
 # Home and informational pages
 GET     /                           controllers.Application.index
+GET     /explain                    controllers.Application.explain
 GET     /about                      controllers.Application.about
 GET     /terms                      controllers.Application.terms
 GET     /feedback                   controllers.Application.feedback
@@ -96,12 +97,13 @@ POST    /subscriber/:sid/channels   controllers.Application.createChannel(sid: L
 GET     /search                     controllers.Application.search
 
 # Authentication pages
-GET     /login                      controllers.Security.login
-GET     /logout                     controllers.Security.logout
-POST    /authenticate               controllers.Security.authenticate
-GET     /register                   controllers.Security.startregister
-POST    /register                   controllers.Security.register
-GET     /forgot                     controllers.Security.forgot
+GET     /login                      controllers.AuthN.login
+GET     /logout                     controllers.AuthN.logout
+POST    /authenticate               controllers.AuthN.authenticate
+GET     /register                   controllers.AuthN.startregister
+POST    /register                   controllers.AuthN.register
+GET     /forgot                     controllers.AuthN.forgot
+POST    /forgot                     controllers.AuthN.remind
 
 # SWORD services
 GET     /sword/servicedocument      controllers.SwordServer.serviceDocument

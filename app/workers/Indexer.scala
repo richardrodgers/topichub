@@ -243,7 +243,7 @@ object Indexer {
   import play.api.Play.current
   import play.api.libs.json.Json._
 
-  val indexSvc = Play.configuration.getString("hub.index.url").get
+  val indexSvc = Play.configuration.getString("hub.index.url").get + "/topichub/"
 
   def reindex(dtype: String) = {
     val delreq = WS.url(indexSvc + dtype)
@@ -316,7 +316,7 @@ object Searcher {
   import play.api.Play.current
   import play.api.libs.json.Json._
 
-  val indexSvc = Play.configuration.getString("hub.index.url")
+  val indexSvc = Play.configuration.getString("hub.index.url") + "/topichub/"
 
   def itemSearch(query: String, page: Int = 0) = {
     // pass query to index service and manage results

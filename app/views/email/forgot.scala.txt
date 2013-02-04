@@ -1,0 +1,15 @@
+@*****************************************************************************
+ * Email template used to remind subscribers of forgotten passwords          *
+ * Copyright 2013 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(sub: Subscriber, password: String)
+
+Dear @sub.name:
+
+  The password associated with your account is: '@password'
+  If you believe it has been compromised, please reset it promptly.
+
+Thank you,
+
+TopicHub

@@ -1,0 +1,21 @@
+@*****************************************************************************
+ * Explanation of Topic Hub functionality                                    *
+ * TODO: add diagram                                                         *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@()
+
+@main("Explain -  TopicHub") {
+  <h2>Explaining TopicHub</h2>
+  <p>TopicHub workflow:</p>
+  <ul>
+    <li>Publishers deposit a package containing content and typically related metadata.</li>
+    <li>The hub uses the metadata and content to extract information, and exposes this as a set of <em>topics</em>.</li>
+    <li>Subscribers discover these topics, and register their interest in them on the hub.</li>
+    <li>The hub delivers content to subscribers that match the topics they have identified.</li>
+    <li>When new packages arrive from any publisher, the extraction will often match existing topics.</li>
+    <li>In this case, all subscribers will receive the new package, since they have already subscribed to the topic.</li>
+    <li>Subscribers can thus obtain content without conducting ongoing, repetitive searches for content.</li>
+  </ul>
+}

@@ -15,7 +15,7 @@ import play.api.mvc.Results._
 import play.api.libs.ws.WS
 
 import controllers.{Application, SwordClient}
-import models.{Channel, Collection, Ctype, Item, PackageMap, Publisher, Transfer, Subscription, Topic, User}
+import models.{Channel, Collection, Ctype, Item, PackageMap, Publisher, Transfer, Subscriber, Subscription, Topic, User}
 import models.HubUtils._
 
 /** Conveyor delivers content or data to specified targets.
@@ -31,6 +31,7 @@ class ConveyorWorker extends Actor {
     case subscription: Subscription => Conveyor.fulfill(subscription)
     case item: Item => Conveyor.newItem(item)
     case collection: Collection => Conveyor.newCollection(collection)
+    case subscriber: Subscriber => Conveyor.remindUser(subscriber)
     case _ => println("Unknown task")
   }
 }
@@ -88,6 +89,12 @@ object  Conveyor {
     val pkgMap = PackageMap.findById(coll.pkgmap_id).get
     val msg = views.txt.email.new_collection(pub, coll, ctype, pkgMap, hubUrl)
     sendMailGun("noreply@topichub.org", user.email, "TopicHub - Your new Collection", msg.body)
+  }
+
+  def remindUser(subscriber: Subscriber) {
+    val user = User.findById(subscriber.user_id).get
+    val msg = views.txt.email.forgot(subscriber, user.password)
+    sendMailGun("noreply@topichub.org", user.email, "TopicHub - Account Reminder", msg.body)
   }
 
   private def transferItem(transfer: Transfer, item: Item, channel: Channel, topic: Option[Topic]) {

@@ -23,16 +23,21 @@ import play.api.libs.json._
 import models._
 import store._
 import workers.{Cataloger, Conveyor, ConveyorWorker, IndexWorker}
+import AuthN._
 
-object Application extends Controller {
+object Application extends Controller with Secured {
 
-  val indexSvc = Play.configuration.getString("hub.index.url").get
+  val indexSvc = Play.configuration.getString("hub.index.url").get + "/topichub/"
 
   val conveyor = Akka.system.actorOf(Props[ConveyorWorker], name="conveyor")
   val indexer = Akka.system.actorOf(Props[IndexWorker], name="indexer")
   
   def index = Action {
     Ok(views.html.index("Your new application is ready."))
+  }
+
+  def explain = Action {
+    Ok(views.html.explain())
   }
 
   def about = Action {
@@ -169,18 +174,19 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such item"))
   }
 
-  def itemTransfer(id: Long, mode: String) = Action { implicit request =>
+  def itemTransfer(id: Long, mode: String) = isAuthenticated { username => implicit request =>
     Item.findById(id).map( item => {
-      val user = User.findByName(session.get("username").get).get
+      val user = User.findByName(username).get
       val sub = Subscriber.findByUserId(user.id).get
-      Ok(views.html.item_transfer(id, sub.channelsWith(mode)))
+      val msg = if ("package".equals(mode)) "Deposit" else "Notify"
+      Ok(views.html.item_transfer(id, sub.channelsWith(mode), msg))
     }
     ).getOrElse(NotFound("No such item"))
   }
 
-  def transfer(id: Long) = Action { implicit request =>
+  def transfer(id: Long) = isAuthenticated { username => implicit request =>
     Item.findById(id).map( item => {
-      val user = User.findByName(session.get("username").get).get
+      val user = User.findByName(username).get
       val sub = Subscriber.findByUserId(user.id).get
       // create a transfer and pass to a conveyor
       val channel_id = request.queryString.get("channel").getOrElse(List("0L")).head.toLong
@@ -206,20 +212,37 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such scheme"))
   }
 
+  /*
   def topicSubscribe(id: Long, mode: String) = Action { implicit request =>
-    Topic.findById(id).map( topic => {
-      val user = User.findByName(session.get("username").get).get
+    Topic.findById(id).map( topic => { 
+      val sessUser = session.get("username")
+      if (sessUser.isEmpty) {
+         // send to login  page
+         Redirect(routes.Security.login) 
+      } else {
+          val user = User.findByName(session.get("username").get).get
+          val sub = Subscriber.findByUserId(user.id).get
+         Ok(views.html.topic_subscribe(topic, sub.channelsWith(mode)))
+      }
+    }
+    ).getOrElse(NotFound("No such topic"))
+  }
+  */
+
+  //def topicSubscribe(id: Long, mode: String) = Action { implicit request =>
+ def topicSubscribe(id: Long, mode: String) = isAuthenticated { username => implicit request =>
+    Topic.findById(id).map( topic => { 
+      val user = User.findByName(username).get
       val sub = Subscriber.findByUserId(user.id).get
       Ok(views.html.topic_subscribe(topic, sub.channelsWith(mode)))
     }
     ).getOrElse(NotFound("No such topic"))
   }
 
-  def topicValidate(scheme_id: Long) = Action { implicit request => 
+  def topicValidate(scheme_id: Long) = isAuthenticated { username => implicit request => 
     Scheme.findById(scheme_id).map( scheme => {
-       val userName = session.get("username").getOrElse("")
        val topic_id = request.body.asFormUrlEncoded.get.get("topic").get.head
-       checkTopic(scheme, topic_id, userName)
+       checkTopic(scheme, topic_id, username)
     }
     ).getOrElse(NotFound("No such scheme"))
   }
@@ -237,9 +260,9 @@ object Application extends Controller {
     }
   }
 
-  def topicPresub(sid: Long, topicId: String, name: String, mode: String) = Action { implicit request =>
+  def topicPresub(sid: Long, topicId: String, name: String, mode: String) = isAuthenticated { username => implicit request =>
     Scheme.findById(sid).map( scheme => {
-      val user = User.findByName(session.get("username").get).get
+      val user = User.findByName(username).get
       val sub = Subscriber.findByUserId(user.id).get
       Ok(views.html.topic_presub(scheme, topicId, name, sub.channelsWith(mode)))
     }
@@ -248,9 +271,9 @@ object Application extends Controller {
    // Redirect(routes.Application.subscribe(topic.id))
   }
 
-  def subscribe(id: Long) = Action { implicit request =>
+  def subscribe(id: Long) = isAuthenticated { username => implicit request =>
     Topic.findById(id).map( t => {
-      val user = User.findByName(session.get("username").get).get
+      val user = User.findByName(username).get
       val sub = Subscriber.findByUserId(user.id).get
       // create a subscription and pass to a conveyor
       val channel_id = request.body.asFormUrlEncoded.get.get("channel").get.head.toLong
@@ -261,9 +284,9 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such topic"))
   }
 
-  def presubscribe(sid: Long, topicId: String, topicName: String) = Action { implicit request =>
+  def presubscribe(sid: Long, topicId: String, topicName: String) = isAuthenticated { username => implicit request =>
     Scheme.findById(sid).map( scheme => {
-      val user = User.findByName(session.get("username").get).get
+      val user = User.findByName(username).get
       val sub = Subscriber.findByUserId(user.id).get
       // create a subscription and pass to a conveyor
       val channel_id = request.body.asFormUrlEncoded.get.get("channel").get.head.toLong
@@ -316,11 +339,11 @@ object Application extends Controller {
     ).getOrElse(NotFound("No such publisher"))
   }
 
-  def createPublisher = Action { implicit request =>
+  def createPublisher = isAuthenticated { username => implicit request =>
     pubForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_publisher(null, errors)),
       value => {
-        val user = User.findByName(session.get("username").get).get
+        val user = User.findByName(username).get
         val pub = Publisher.make(user.id, value.pubId, value.name, value.description, value.category, value.status, value.link, value.logo)
         Redirect(routes.Application.editPublisher(pub.id))
       }
@@ -748,13 +771,13 @@ object Application extends Controller {
   }
 
 
-  def createSubscriber = Action { implicit request =>
+  def createSubscriber = isAuthenticated { username => implicit request =>
     subscriberForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_subscriber(errors)),
       value => {
-        val user = User.findByName(session.get("username").get).get
+        val user = User.findByName(username).get
         val sub = Subscriber.make(user.id, value.category, value.name, value.visibility, value.keywords, value.link, value.logo, value.contact, value.swordService, value.terms, value.backFile)
-        // index vlaues
+        // index values
         indexer ! sub
         Redirect(routes.Application.subscribers)
       }

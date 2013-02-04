@@ -1,14 +1,18 @@
-@(id: Long, channels: List[Channel])
+@*****************************************************************************
+ * Display form for selcting a channel for a subscriber                      *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(id: Long, channels: List[Channel], action: String)
 
 @import helper._
 
 @main("Item Transfer - TopicHub") {
-
     <h2>Select a destination:</h2> 
     <form action="@routes.Application.transfer(id)">
       @channels.map { channel =>
         <input type="radio" name="channel" value="@channel.id"/>&nbsp@channel.description<br>
       } 
-      <input type="submit" value="Deposit">
+      <input type="submit" value="@action">
     </form> 
 }

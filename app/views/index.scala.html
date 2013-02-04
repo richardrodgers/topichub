@@ -1,24 +1,29 @@
+@*****************************************************************************
+ * Front page of Topic Hub, displaying cumulative statistics and             *
+ * introductory text                                                         *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
 @(message: String)
 
-@main("TopicHub") {
-    
+@main("TopicHub") {   
   <div class="hero-unit">
     <h2>Welcome to Open Access TopicHub!</h2>
-    <p>TopicHub connects content providers and collectors. It provides numerous ways to help you discover and acquire content for your repository, from simple email notifications, to RSS feeds, to fully automated delivery directly into IRs. Getting content has never been easier.</p>
-    <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+    <p>Getting content for your IR has never been easier! TopicHub connects you to content providers through a suite of simple, easy-to-use tools that manage the discovery and acquisition of content for your IR. Use TopicHub to establish ongoing content acquisition feeds that are customized to your institution’s operational procedures -- anything from email notifications of newly published content to fully-automated delivery of that content directly to your IR. Ready to get started?</p>
+    <p><a href="@routes.Application.explain" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
   </div>
   <div class="row">
   	<div class="span4">
   		<h2>For Publishers</h2>
-  		<p>TopicHub is a great way to (re)distribute your content without any hassle</p>
+      <p>Want to do your part to enable your authors to comply with Funder and/or Institutional OA mandates?  We are a trusted intermediary dedicated to making the flow of content between publishers and repositories easy and friction-free.  Deposit your content and metadata once, with TopicHub, and we will do the rest!</p>
   	</div>
    	<div class="span4">
   		<h2>For Repositories</h2>
-  		<p>TopicHub is by far the most frictionless content you will acquire</p>
+  		<p>Is growth of your IR held back by the operational headaches of identifying and retrieving your faculty's articles? Through TopicHub you can create a content and metadata feed that is customized for your specific Institution.  We can notify you of newly published content through email or RSS and, if you choose, we can push the identified OA content directly into your IR using the SWORD protocol.</p>
   	</div>
   	<div class="span4">
   		<h2>For Everybody</h2>
-  		<p>TopicHub allows to stay informed on publication trends</p>
+  		<p>TopicHub allows you to stay informed on publication trends, or define and track any characteristics that the hub reveals: authors, institutions, and more.</p>
   	</div>
   </div>
   <div class="row">
