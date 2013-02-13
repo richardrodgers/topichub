@@ -1,7 +1,11 @@
-@(subForm: Form[Subscriber])
+@*****************************************************************************
+ * Form page for creating new subscribers                                    *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(subForm: Form[Subscriber])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("New Subscriber - TopicHub") {
   <div class="container-fluid">
     <div class="row-fluid">
@@ -17,18 +21,23 @@
           @inputText(subForm("contact"))  
           @inputText(subForm("swordService")) 
           @inputText(subForm("terms"))
-          @inputText(subForm("backFile"))  
+        @*  @inputText(subForm("backFile"))  *@ 
           <input type="submit" value="Create">      
         }
       </div>
       <div class="span8">
         <div class="hero-unit">
           <h2>Define your subscriber profile</h2>
-          <p>You can create a subscriber <em>identity</em> very easily by completing this form.
+          <p>You can create your subscriber <em>identity</em> very easily by completing this form.
              You will then be able to define specific 'destinations' for content you want.</p>
           <p>Visibility controls your appearance on the hub - choose 'public' to share your activities.</p>
           <p>Choose an accurate name (usually an institution name), since this (and keywords) will be indexed by the hub and be the primary way
-          to discover you. Provide a URL to your site in the link field, and a logo URL if available</p>
+          to discover you. Provide a URL to your site in the link field, and a logo URL if available. Provide a valid contact email address.</p>
+          <p>Since SWORD is the primary way content is delivered, enter the base URL of the SWORD service your repository runs.</p>
+          <p>Terms and backfile are optional, but indicate your default instructions when creating new subscriptions</p>
+          <p>VERY IMPORTANT: when you have completed this form, you must also create one or more 'destinations'. These define where you will
+          want your content or notifications to go. You can define as many desintations as you like. From your subscriber page, just press the
+          'manage' button.</p>
         </div>
       </div>
     </div>

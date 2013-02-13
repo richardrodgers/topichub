@@ -3,10 +3,9 @@
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(form: Form[(String,String)])(implicit flash: Flash)
-
+@(form: Form[(String,String)])(implicit hubContext: HubContext, flash: Flash)
 @main("Login - TopicHub") {
-
+     <p><em>@flash.get("error").getOrElse("")</em></p>
      <h2>Login:</h2>
      @helper.form(routes.AuthN.authenticate) {
         <p>

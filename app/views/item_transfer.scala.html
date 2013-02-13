@@ -3,10 +3,9 @@
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(id: Long, channels: List[Channel], action: String)
+@(id: Long, channels: List[Channel], action: String)(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("Item Transfer - TopicHub") {
     <h2>Select a destination:</h2> 
     <form action="@routes.Application.transfer(id)">

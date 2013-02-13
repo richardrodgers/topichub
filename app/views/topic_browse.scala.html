@@ -1,4 +1,4 @@
-@(id: Long, topics: List[Topic], description: String, page: Int, total: Long)
+@(id: Long, topics: List[Topic], description: String, page: Int, total: Long)(implicit hubContext: HubContext)
 
 @pagination = {
    <span>

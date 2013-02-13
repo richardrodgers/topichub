@@ -1,7 +1,11 @@
-@(fbform: Form[(String,Boolean,String)])(implicit flash: Flash)
+@*****************************************************************************
+ * Page to display a form to provide feedback                                *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(fbform: Form[(String,Boolean,String)])(implicit hubContext: HubContext, flash: Flash)
 
 @import helper._
-
 @main("Feedback -  TopicHub") {
   <h2>Feedback</h2>
   <p>We'd love to hear from you!</p>

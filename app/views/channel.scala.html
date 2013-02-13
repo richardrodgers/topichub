@@ -1,10 +1,10 @@
 @*****************************************************************************
- * Display channel information (labelled 'Destination'), including any       *
- * subscriptions belinging to it.                                            *
+ * Display channel information (labeled 'Destination'), including any        *
+ * subscriptions belonging to it.                                            *
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(channel: Channel)
+@(channel: Channel)(implicit hubContext: HubContext)
 
 @main("Destination - TopicHub") {
   <div class="hero-unit">

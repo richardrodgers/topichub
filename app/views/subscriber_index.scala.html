@@ -4,7 +4,7 @@
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(user: Option[User])
+@()(implicit hubContext: HubContext)
 @main("Subscribers -  TopicHub") {
   <div class="container-fluid">
   	<div class="row-fluid">
@@ -22,9 +22,7 @@
         <div class="hero-unit">
           <h2>Become a Subscriber!</h2>
           <p>TopicHub makes items available and the topics it assigns assist you in discovering items of interest, but only by becoming a subscriber can you enjoy the real power of TopicHub, which is the ability to route content to your repository automatically and perpetually. You need only express which topics you would like to subscribe to, and the hub will fulfill these subscriptions (just new content, or including the 'backfile' at your discretion). You may add, cancel or adjust your subscription <em>portfolio</em> at any time. Explore fellow subscribers by browsing their category (Institutional Repository, e.g) at left. 
-          @if(!user.isEmpty) {
-            <p><a rel="tooltip" title="register to subscribe to content on the hub" href="@routes.Application.newSubscriber" class="btn btn-primary btn-large pull-right">Sign Up &raquo;</a></p>
-          }
+          <p><a rel="tooltip" title="register to subscribe to content on the hub" href="@routes.Application.newSubscriber" class="btn btn-primary btn-large pull-right">Sign Up &raquo;</a></p>
         </div>
       </div>
     </div>

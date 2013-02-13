@@ -1,7 +1,11 @@
-@(pub: Publisher, collForm: Form[Collection])
+@*****************************************************************************
+ * Page with form to create new Collection                                   *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(pub: Publisher, collForm: Form[Collection])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("New Collection - TopicHub") {
   <div class="container-fluid">
     <div class="row-fluid">

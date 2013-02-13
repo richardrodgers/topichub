@@ -149,4 +149,9 @@ object HubUtils {
       token
   }
 
+  def isAnalyst(user: Option[User]) = {
+    if (user.isEmpty) false
+    else user.get.role.indexOf("analyst") >= 0 || user.get.role.indexOf("admin") >= 0
+  }
+
 }

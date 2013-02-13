@@ -1,7 +1,11 @@
-@(pub: Publisher, pubForm: Form[Publisher])
+@*****************************************************************************
+ * Page with form to create new Publisher                                    *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(pub: Publisher, pubForm: Form[Publisher])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("New Publisher - TopicHub") {
   <div class="container-fluid">
     <div class="row-fluid">

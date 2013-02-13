@@ -4,7 +4,7 @@
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(user: Option[User])
+@()(implicit hubContext: HubContext)
 
 @main("Publishers -  TopicHub") {
   <div class="container-fluid">
@@ -23,9 +23,7 @@
         <div class="hero-unit">
           <h2>Contribute your content to TopicHub</h2>
           <p>Secondary use of content has created much more complex environment for publishers, where funding mandates, institutional policies, etc often mean making copies (and related metadata) available to a number of parties. Put the content on TopicHub, and all these coordination costs disappear, since it functions as a one-stop location for any consumer of content, and you don't need to track or manage who they are: they interact with the hub, not you. Browse publishers and their collections at left.</p>
-          @if(!user.isEmpty) {
-             <p><a rel="tooltip" title="register to publish your content to the hub" href="@routes.Application.newPublisher" class="btn btn-primary btn-large pull-right">Sign Up &raquo;</a></p>
-          }
+          <p><a rel="tooltip" title="register to publish your content to the hub" href="@routes.Application.newPublisher" class="btn btn-primary btn-large pull-right">Sign Up &raquo;</a></p>
         </div>
       </div>
     </div>

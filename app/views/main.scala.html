@@ -3,7 +3,7 @@
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(title: String)(content: Html)
+@(title: String)(content: Html)(implicit hubContext: HubContext)
 
 <!DOCTYPE html>
 
@@ -33,12 +33,22 @@
               <span class="icon-bar"></span>
             </a>
             <a class="brand" href="#">Open Access TopicHub</a>
-            <div class="nav-collapse">
+            <div class="nav-collapse collapse">
+              <p class="navbar-text pull-right">
+                @if(hubContext.user.isEmpty) {
+                  <a href="@routes.AuthN.login">Login</a>
+                } else {
+                  <a rel="tooltip" title="logout" href="@routes.AuthN.logout">@hubContext.user.get.name</a>
+                }
+              </p>
               <ul class="nav">
                 <li class="active"><a href="@routes.Application.index">Home</a></li>
                 <li><a href="@routes.Application.topics">Topics</a></li>
                 <li><a href="@routes.Application.publishers">Publishers</a></li>
                 <li><a href="@routes.Application.subscribers">Subscribers</a></li>
+                @if(HubUtils.isAnalyst(hubContext.user)) {
+                  <li><a href="@routes.Application.workbench">Workbench</a></li>
+                }
                 <li><form class="form-search" action="@routes.Application.search">
                 	<div class="input-append">
                     <select name="etype" style="width:100px">
@@ -50,8 +60,6 @@
                 	  <button type="submit" class="btn"><i class="icon-envelope">Go</i></button>
                   </div></form>
                 </li>
-                <li><a href="@routes.AuthN.login">Login</a></li>
-                <li><a href="@routes.AuthN.logout">Logout</a></li>
               </ul>
             </div><!--/.nav-collapse -->
           </div>

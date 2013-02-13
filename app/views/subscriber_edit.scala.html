@@ -1,7 +1,11 @@
-@(sub: Subscriber)
+@*****************************************************************************
+ * Page for displaying subscriber information including channels             *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(sub: Subscriber)(implicit hubContext: HubContext)
 
 @main("Subscriber - TopicHub") {
-
   <div class="hero-unit">
      <h3>~ Subscriber ~</h3>
   	 <h3>:: @sub.category ::</h3>

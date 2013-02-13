@@ -1,4 +1,4 @@
-@(subs: Seq[Option[Subscriber]], query: String, page: Int)
+@(subs: Seq[Option[Subscriber]], query: String, page: Int)(implicit hubContext: HubContext)
 
 @main("Subscribers -  TopicHub") {
 

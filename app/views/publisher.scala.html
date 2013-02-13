@@ -1,18 +1,25 @@
-@(pub: Publisher, user: Option[User])
+@*****************************************************************************
+ * Page for displaying publisher information including collections           *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(pub: Publisher, user: Option[User])(implicit hubContext: HubContext)
 
 @main("Publisher - TopicHub") {
   <div itemscope itemtype="http://schema.org/Organization" class="hero-unit">
     <h3>~ Publisher ~</h3>
     <h2 itemprop="name">@pub.name</h2>
     <p>@pub.description</p>
-    @if(!pub.link.isEmpty) {
-      <p><a href="@pub.link">publisher site</a></p>
-    }
     <p>Registered @HubUtils.fmtDate(pub.created)</P>
     <p>@HubUtils.pluralize(pub.itemCount, "article") deposited</p>
-    @if(!user.isEmpty && user.get.hasPublisher(pub.id)) {
-       <a rel="tooltip" title="manage publisher account" href="@routes.Application.editPublisher(pub.id)" class="btn btn-primary btn-large pull-right">Manage &raquo;</a>
-    }
+    <span>
+      @if(! pub.link.isEmpty) {
+        <a rel="tooltip" title="Visit publisher site" href="@pub.link" class="btn btn-primary btn-large">Site &raquo;</a>
+      }
+      @if(!user.isEmpty && user.get.hasPublisher(pub.id)) {
+         <a rel="tooltip" title="manage publisher account" href="@routes.Application.editPublisher(pub.id)" class="btn btn-primary btn-large pull-right">Manage &raquo;</a>
+      }
+    </span>
   </div>
   <h3>Collections</h3>
   @if(pub.collectionCount > 0) {

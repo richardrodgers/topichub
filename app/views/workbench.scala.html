@@ -1,0 +1,29 @@
+@*****************************************************************************
+ * Workbench page is the starting page for all analytics activities, such as *
+ * creating or editing schemes, finders, content types, package maps, etc    *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@()(implicit hubContext: HubContext)
+@main("Workbench -  TopicHub") {
+  <div class="container-fluid">
+  	<div class="row-fluid">
+      <div class="span4">
+      	<div class="well sidebar-nav">
+      		<ul class="nav nav-list">
+      			<li class="nav-header">Tools</li>
+            <li><a href="@routes.Application.schemes">Schemes</a></li>
+            <li><a href="@routes.Application.pkgmaps">Packages</a></li>
+            <li><a href="@routes.Application.ctypes">Content Types</a></li>
+      		</ul>
+      	</div>
+      </div>
+      <div class="span8">
+        <div class="hero-unit">
+          <h2>Analytics Workbench</h2>
+          <p>The essential work of the hub is to assign topics to the content published there. This work involves understanding and describing the structure of the content and the vocabularies used by the topics. Follow the links at the left to access the tools used to manage the creation of topics.
+        </div>
+      </div>
+    </div>
+  </div>
+}

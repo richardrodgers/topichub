@@ -1,12 +1,14 @@
-@(schemeId: String, finderForm: Form[Finder])
+@*****************************************************************************
+ * Page with form to create new Finder                                       *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(schemeId: String, finderForm: Form[Finder])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("New Finder - TopicHub") {
-
      <h2>Add a new finder</h2> 
-    @form(routes.Application.createFinder(schemeId)) {
-        
+    @form(routes.Application.createFinder(schemeId)) {    
         @select(finderForm("scheme_id"), options(Scheme.mapView)) 
         @textarea(finderForm("description")) 
         @inputText(finderForm("cardinality")) 

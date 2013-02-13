@@ -1,15 +1,17 @@
-@(pkgmap: PackageMap, pmform: Form[(Long, String, String, Long)])
+@*****************************************************************************
+ * Page with form to manage a Package Map                                    *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(pkgmap: PackageMap, pmform: Form[(Long, String, String, Long)])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("Package Map - TopicHub") {
-
      <h2>Package Map: @pkgmap.pkgmapId</h2>
-
      <h3>Mappings</h3>
      <ul>
         @pkgmap.schemes.map { scheme =>
-            <li><a href="@routes.Application.scheme(scheme.id)">@scheme.schemeId</a>: @scheme.description</li>
+          <li><a href="@routes.Application.scheme(scheme.id)">@scheme.schemeId</a>: @scheme.description</li>
         }
      </ul>
     

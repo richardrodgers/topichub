@@ -4,7 +4,7 @@
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(item: Item)
+@(item: Item)(implicit hubContext: HubContext)
 
 @main("Item - TopicHub") {
     <div itemscope itemtype="http://schema.org/@item.contentType.get.ctypeId" class="hero-unit">

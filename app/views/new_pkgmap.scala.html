@@ -1,12 +1,14 @@
-@(pkgmapForm: Form[PackageMap])
+@*****************************************************************************
+ * Page with form to create new Package Map                                  *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(pkgmapForm: Form[PackageMap])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("Package Maps - TopicHub") {
-
      <h2>Add a new package map</h2> 
-    @form(routes.Application.createPkgmap) {
-        
+    @form(routes.Application.createPkgmap) {    
         @inputText(pkgmapForm("pkgmapId"))
         @inputText(pkgmapForm("description")) 
         @inputText(pkgmapForm("swordurl")) 

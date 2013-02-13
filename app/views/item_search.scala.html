@@ -1,13 +1,17 @@
-@(items: Seq[Option[Item]], query: String, page: Int)
+@*****************************************************************************
+ * Displays a page of item search results                                    *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(items: Seq[Option[Item]], query: String, page: Int)(implicit hubContext: HubContext)
 
 @main("Items -  TopicHub") {
-
-     <h2>Search: '@query' yielded @items.size items</h2>
-     <i class="icon-search"></i>
-     <dl>
-       @items.map { item =>
-         <dt><a href="@routes.Application.item(item.get.id)">@item.get.metadataValue("title")</a></dt>
-         <dd>@item.get.metadataValues("author").mkString("; ")</dd>
-       }
-     </dl>
+   <h2>Search: '@query' yielded @items.size items</h2>
+   <i class="icon-search"></i>
+   <dl>
+     @items.map { item =>
+       <dt><a href="@routes.Application.item(item.get.id)">@item.get.metadataValue("title")</a></dt>
+       <dd>@item.get.metadataValues("author").mkString("; ")</dd>
+     }
+   </dl>
 }

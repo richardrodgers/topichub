@@ -1,12 +1,14 @@
-@(schemeForm: Form[Scheme])
+@*****************************************************************************
+ * Page with form to create new Scheme                                       *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(schemeForm: Form[Scheme])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("New Scheme - TopicHub") {
-
-     <h2>Add a new scheme</h2> 
-    @form(routes.Application.createScheme) {
-        
+    <h2>Add a new scheme</h2> 
+    @form(routes.Application.createScheme) {       
         @inputText(schemeForm("schemeId"))
         @inputText(schemeForm("gentype")) 
         @inputText(schemeForm("category")) 

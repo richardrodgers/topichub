@@ -1,6 +1,11 @@
-@()
+@*****************************************************************************
+ * Page explaining service and design characteristics of TopicHub            *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@()(implicit hubContext: HubContext)
 
-@main("About -  TopicHub") {
+@main("About - TopicHub") {
   <h2>About TopicHub</h2>
   <p>TopicHub is a web-based service to facilitate distribution of packaged content, using a publish/subscribe model. Packages may contain any number of files, but the service typically would be used to distribute a primary artifact (e.g. a scholarly article), together with metadata or other supplementary files. Publishers and subscribers are expected to be primarily institutional or commercial entities, but the service could also be used by individuals on either end.</p>
   <p>The service embraces open content interoperability standards wherever possible, specifically:</p>

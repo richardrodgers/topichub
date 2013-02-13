@@ -6,8 +6,6 @@ package controllers
 
 import akka.actor.Props
 
-//import scala.xml.{NodeSeq, XML}
-
 import org.joda.time.format.ISODateTimeFormat
 
 import play.api._
@@ -23,17 +21,30 @@ import play.api.Play.current
 import models.{Subscriber, User}
 import workers.{Conveyor, ConveyorWorker}
 
+case class HubContext(user: Option[User])
+
 trait Secured {
    def username(request: RequestHeader) = request.session.get("username")
-   def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.AuthN.login)
+   def onUnauthorized(request: RequestHeader) = Unauthorized("Not authorized")
+   def onCouldAuthorize(request: RequestHeader) = Redirect(routes.AuthN.login).flashing("error" -> "Please login to perform this action")
    def isAuthenticated(f: => String => Request[AnyContent] => Result) = {
       Authenticated(username, onUnauthorized) { user =>
          Action(request => f(user)(request))
       }
    }
+   def mustAuthenticate(f: => String => Request[AnyContent] => Result) = {
+      Authenticated(username, onCouldAuthorize) { user =>
+         Action(request => f(user)(request))
+      }
+   }
+   implicit def hubContext[A](implicit request: Request[A]): HubContext = {
+     request.session.get("username").map ( name =>
+       HubContext(User.findByName(name))
+     ).getOrElse(HubContext(None))
+   }
 }
 
-object AuthN extends Controller {
+object AuthN extends Controller with Secured {
 
   val hubNs = "http://topichub"
   val iso8601 = ISODateTimeFormat.dateTime
@@ -55,8 +66,8 @@ object AuthN extends Controller {
     Ok(views.html.login(loginForm))
   }
 
-  def logout = Action {
-    Ok(views.html.index("hello")).withNewSession
+  def logout = Action { implicit request =>
+    Redirect(routes.Application.index).withNewSession
   }
 
   val forgotForm = Form(
@@ -112,7 +123,7 @@ object AuthN extends Controller {
     regForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.register(formWithErrors)),
       user => {
-        User.create(user._1, user._2, user._3, "admin")
+        User.create(user._1, user._2, user._3, user._4)
         Redirect(routes.Application.index)
       }
     )

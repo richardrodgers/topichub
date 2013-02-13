@@ -5,6 +5,7 @@
 package controllers
 
 import java.util.{Date}
+import java.net.URLEncoder
 
 import akka.actor.Props
 
@@ -32,20 +33,24 @@ object Application extends Controller with Secured {
   val conveyor = Akka.system.actorOf(Props[ConveyorWorker], name="conveyor")
   val indexer = Akka.system.actorOf(Props[IndexWorker], name="indexer")
   
-  def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+  def index = Action { implicit request =>
+    Ok(views.html.index(""))
   }
 
-  def explain = Action {
+  def explain = Action { implicit request =>
     Ok(views.html.explain())
   }
 
-  def about = Action {
+  def about = Action { implicit request =>
     Ok(views.html.about())
   }
 
-  def terms = Action {
+  def terms = Action { implicit request =>
     Ok(views.html.terms())
+  }
+
+  def workbench = Action { implicit request =>
+    Ok(views.html.workbench())
   }
 
   val feedbackForm = Form(
@@ -78,8 +83,9 @@ object Application extends Controller with Secured {
     val offset = page * pageSize
     val etype = rquery.get("etype").get.head
     val query = rquery.get("query").getOrElse(List("foo")).head
+    val encQuery = URLEncoder.encode(query)
     Async {
-      val req = WS.url(indexSvc +  etype + "/_search?q=" + query + "&from=" + offset + "&size=" + pageSize)
+      val req = WS.url(indexSvc +  etype + "/_search?q=" + encQuery + "&from=" + offset + "&size=" + pageSize)
       req.get().map { response =>
         val json = response.json
         val hits = (json \ "hits" \\ "hits").head \\ "dbId" map(_.as[Long])
@@ -97,36 +103,36 @@ object Application extends Controller with Secured {
           val subs = hits map ( id => Subscriber.findById(id) )
           Ok(views.html.subscriber_search(subs, query, page))
         } else {
-          NotFound("Unknown Search Entity Type")
+          NotFound(views.html.trouble("Unknown Search Entity Type"))
         }
       }
     }
   }
 
-  def item(id: Long) = Action {
-    Item.findById(id).map( i => 
-      Ok(views.html.item(i))
-    ).getOrElse(NotFound("No such item"))
+  def item(id: Long) = Action { implicit request =>
+    Item.findById(id).map( item => 
+      Ok(views.html.item(item))
+    ).getOrElse(NotFound(views.html.trouble("No such item")))
   }
 
-  def itemBrowse(filter: String, id: Long, page: Int) = Action {
+  def itemBrowse(filter: String, id: Long, page: Int) = Action { implicit request =>
     filter match {
       case "collection" => itemBrowseCollection(id, page)
       case "topic" => itemBrowseTopic(id, page)
-      case _ => NotFound("No such filter")
+      case _ => NotFound(views.html.trouble("No such filter"))
     }
   }
 
-  private def itemBrowseTopic(id: Long, page: Int) = {
+  private def itemBrowseTopic(id: Long, page: Int)(implicit request: Request[AnyContent]): Result = {
     Topic.findById(id).map( topic => 
       Ok(views.html.item_browse(id, topic.pagedItems(page, 10), "topic", topic.name, page, topic.itemCount))
-    ).getOrElse(NotFound("No such topic"))
+    ).getOrElse(NotFound(views.html.trouble("No such topic")))
   }
 
-  private def itemBrowseCollection(id: Long, page: Int) = {
+  private def itemBrowseCollection(id: Long, page: Int)(implicit request: Request[AnyContent]): Result = { 
     Collection.findById(id).map( coll => 
       Ok(views.html.item_browse(id, Item.inCollection(id, page), "collection", coll.description, page, Item.collectionCount(coll.id)))
-    ).getOrElse(NotFound("No such collection"))
+    ).getOrElse(NotFound(views.html.trouble("No such collection")))
   }
 
   def itemSearch(topicId: String, page: Int) = Action { implicit request =>
@@ -152,15 +158,14 @@ object Application extends Controller with Secured {
     }
   }
 
-  def itemFile(id: Long) = Action {
+  def itemFile(id: Long) = Action { implicit request =>
     Item.findById(id).map( item => {
       val itemPkg = Store.content(item)
       SimpleResult(
         header = ResponseHeader(200, Map(CONTENT_TYPE -> itemPkg.mimetype)),
         body = Enumerator.fromStream(itemPkg.content)
       )
-    }
-    ).getOrElse(NotFound("No such item"))  
+    }).getOrElse(NotFound(views.html.trouble("No such item")))  
   }
 
   def itemView(id: Long) = Action { implicit request =>
@@ -171,72 +176,65 @@ object Application extends Controller with Secured {
         body = Enumerator.fromStream(Store.content(i).resource(name))
       )
     }
-    ).getOrElse(NotFound("No such item"))
+    ).getOrElse(NotFound(views.html.trouble("No such item")))
   }
 
-  def itemTransfer(id: Long, mode: String) = isAuthenticated { username => implicit request =>
+  def itemTransfer(id: Long, mode: String) = mustAuthenticate { username => implicit request =>
     Item.findById(id).map( item => {
-      val user = User.findByName(username).get
-      val sub = Subscriber.findByUserId(user.id).get
       val msg = if ("package".equals(mode)) "Deposit" else "Notify"
-      Ok(views.html.item_transfer(id, sub.channelsWith(mode), msg))
+      showTransferIfSubscriber(User.findByName(username).get, id, msg, mode)
     }
-    ).getOrElse(NotFound("No such item"))
+    ).getOrElse(NotFound(views.html.trouble("No such item")))
+  }
+
+  private def showTransferIfSubscriber(user: User, id: Long, msg: String, mode: String)(implicit request: Request[AnyContent]): Result = {
+    Subscriber.findByUserId(user.id).map( sub =>
+      Ok(views.html.item_transfer(id, sub.channelsWith(mode), msg)) 
+    ).getOrElse(Redirect(routes.Application.subscribers))
   }
 
   def transfer(id: Long) = isAuthenticated { username => implicit request =>
-    Item.findById(id).map( item => {
-      val user = User.findByName(username).get
-      val sub = Subscriber.findByUserId(user.id).get
-      // create a transfer and pass to a conveyor
-      val channel_id = request.queryString.get("channel").getOrElse(List("0L")).head.toLong
-      conveyor ! Transfer.make(channel_id, item.id, -1L, Some("unknown"))
-      Redirect(routes.Application.item(item.id))
-    }
-    ).getOrElse(NotFound("No such item"))
+    Item.findById(id).map( item => 
+      transferIfSubscriber(User.findByName(username).get, item,
+                           request.queryString.get("channel").getOrElse(List("0L")).head.toLong)
+    ).getOrElse(NotFound(views.html.trouble("No such item")))
   }
 
-  def topics = Action {
+  private def transferIfSubscriber(user: User, item: Item, channel_id: Long): Result = {
+    Subscriber.findByUserId(user.id).map( sub => {
+        // create a transfer and pass to a conveyor
+        conveyor ! Transfer.make(channel_id, item.id, -1L, Some("unknown"))
+        Redirect(routes.Application.item(item.id))      
+      }
+    ).getOrElse(Redirect(routes.Application.subscribers))
+  }
+
+  def topics = Action { implicit request =>
     Ok(views.html.topic_index(Scheme.withGentype("topic").filter(!_.schemeId.equals("meta"))))
   }
 
-  def topic(id: Long) = Action {
+  def topic(id: Long) = Action { implicit request =>
     Topic.findById(id).map( t => 
       Ok(views.html.topic(t))
-    ).getOrElse(NotFound("No such topic"))
+    ).getOrElse(NotFound(views.html.trouble("No such topic")))
   }
 
-  def topicBrowse(scheme_id: Long, page: Int) = Action {
+  def topicBrowse(scheme_id: Long, page: Int) = Action { implicit request =>
     Scheme.findById(scheme_id).map( scheme => 
       Ok(views.html.topic_browse(scheme.id, Topic.withScheme(scheme.id, page), scheme.description, page, scheme.topicCount))
-    ).getOrElse(NotFound("No such scheme"))
+    ).getOrElse(NotFound(views.html.trouble("No such scheme")))
   }
 
-  /*
-  def topicSubscribe(id: Long, mode: String) = Action { implicit request =>
-    Topic.findById(id).map( topic => { 
-      val sessUser = session.get("username")
-      if (sessUser.isEmpty) {
-         // send to login  page
-         Redirect(routes.Security.login) 
-      } else {
-          val user = User.findByName(session.get("username").get).get
-          val sub = Subscriber.findByUserId(user.id).get
-         Ok(views.html.topic_subscribe(topic, sub.channelsWith(mode)))
-      }
-    }
-    ).getOrElse(NotFound("No such topic"))
+ def topicSubscribe(id: Long, mode: String) = mustAuthenticate { username => implicit request =>
+    Topic.findById(id).map( topic => 
+      topicSubIfSubscriber(User.findByName(username).get, topic, mode) 
+    ).getOrElse(NotFound(views.html.trouble("No such topic")))
   }
-  */
 
-  //def topicSubscribe(id: Long, mode: String) = Action { implicit request =>
- def topicSubscribe(id: Long, mode: String) = isAuthenticated { username => implicit request =>
-    Topic.findById(id).map( topic => { 
-      val user = User.findByName(username).get
-      val sub = Subscriber.findByUserId(user.id).get
+  private def topicSubIfSubscriber(user: User, topic: Topic, mode: String)(implicit request: Request[AnyContent]): Result = {
+    Subscriber.findByUserId(user.id).map( sub =>
       Ok(views.html.topic_subscribe(topic, sub.channelsWith(mode)))
-    }
-    ).getOrElse(NotFound("No such topic"))
+    ).getOrElse(Redirect(routes.Application.subscribers))
   }
 
   def topicValidate(scheme_id: Long) = isAuthenticated { username => implicit request => 
@@ -244,10 +242,10 @@ object Application extends Controller with Secured {
        val topic_id = request.body.asFormUrlEncoded.get.get("topic").get.head
        checkTopic(scheme, topic_id, username)
     }
-    ).getOrElse(NotFound("No such scheme"))
+    ).getOrElse(NotFound(views.html.trouble("No such scheme")))
   }
 
-  private def checkTopic(scheme: Scheme, topicId: String, userName: String): Result = {
+  private def checkTopic(scheme: Scheme, topicId: String, userName: String)(implicit request: Request[AnyContent]): Result = {
     val topic = Topic.forSchemeAndId(scheme.schemeId, topicId)
     if (! topic.isEmpty)
       // just redirect to topic page
@@ -256,19 +254,22 @@ object Application extends Controller with Secured {
       // not a known topic in this scheme - attempt validation  
       val validator = scheme.validator
       val res = if (! validator.isEmpty) validator.get.validate(topicId) else Left("No validator found")
-      Ok(views.html.topic_validate(scheme, topicId, res, User.findByName(userName))) 
+      Ok(views.html.topic_validate(scheme, topicId, res)) 
     }
   }
 
   def topicPresub(sid: Long, topicId: String, name: String, mode: String) = isAuthenticated { username => implicit request =>
-    Scheme.findById(sid).map( scheme => {
-      val user = User.findByName(username).get
-      val sub = Subscriber.findByUserId(user.id).get
-      Ok(views.html.topic_presub(scheme, topicId, name, sub.channelsWith(mode)))
-    }
-    ).getOrElse(NotFound("No such Scheme"))
+    Scheme.findById(sid).map( scheme => 
+      topicPreSubIfSubscriber(User.findByName(username).get, scheme, topicId, name, mode)
+    ).getOrElse(NotFound(views.html.trouble("No such scheme")))
    // val topic = Topic.make(sid, topicId, name)
    // Redirect(routes.Application.subscribe(topic.id))
+  }
+
+  private def topicPreSubIfSubscriber(user: User, scheme: Scheme, topicId: String, name: String, mode: String)(implicit request: Request[AnyContent]): Result = {
+    Subscriber.findByUserId(user.id).map( sub =>
+      Ok(views.html.topic_presub(scheme, topicId, name, sub.channelsWith(mode)))
+    ).getOrElse(Redirect(routes.Application.subscribers))
   }
 
   def subscribe(id: Long) = isAuthenticated { username => implicit request =>
@@ -281,7 +282,7 @@ object Application extends Controller with Secured {
       conveyor ! Subscription.make(sub.id, channel_id, id, policy)
       Redirect(routes.Application.topic(id))
     }
-    ).getOrElse(NotFound("No such topic"))
+    ).getOrElse(NotFound(views.html.trouble("No such topic")))
   }
 
   def presubscribe(sid: Long, topicId: String, topicName: String) = isAuthenticated { username => implicit request =>
@@ -297,8 +298,10 @@ object Application extends Controller with Secured {
       conveyor ! Subscription.make(sub.id, channel_id, topic.id, policy)
       Redirect(routes.Application.topic(topic.id))
     }
-    ).getOrElse(NotFound("No such scheme"))
+    ).getOrElse(NotFound(views.html.trouble("No such scheme")))
   }
+
+  /* Publisher methods */
 
   val pubForm = Form(
   	mapping(
@@ -315,13 +318,20 @@ object Application extends Controller with Secured {
     )(Publisher.apply)(Publisher.unapply)
   )
 
-  def publishers = Action { implicit request => {
-    val userName = session.get("username").getOrElse("")
-  	Ok(views.html.publisher_index(User.findByName(userName)))
+  private def ownsPublisher(username: String, pub: Publisher, result: Result)(implicit request: Request[AnyContent]): Result = {
+    val user = User.findByName(username).get
+    if (user.hasPublisher(pub.id)) {
+      result
+    } else {
+      Unauthorized(views.html.trouble("You are not authorized"))
     }
   }
 
-  def newPublisher = Action {
+  def publishers = Action { implicit request => 
+  	Ok(views.html.publisher_index())
+  }
+
+  def newPublisher = mustAuthenticate { username => implicit request =>
     Ok(views.html.new_publisher(null, pubForm))
   }
 
@@ -329,14 +339,14 @@ object Application extends Controller with Secured {
     val userName = session.get("username").getOrElse("")
     Publisher.findById(id).map( pub => 
       Ok(views.html.publisher(pub, User.findByName(userName)))
-    ).getOrElse(NotFound("No such publisher"))
+    ).getOrElse(NotFound(views.html.trouble("No such publisher")))
     }
   }
 
-  def editPublisher(id: Long) = Action {
+  def editPublisher(id: Long) = isAuthenticated { username => implicit request =>
     Publisher.findById(id).map( pub => 
-      Ok(views.html.publisher_edit(pub))
-    ).getOrElse(NotFound("No such publisher"))
+      ownsPublisher(username, pub, Ok(views.html.publisher_edit(pub)))
+    ).getOrElse(NotFound(views.html.trouble("No such publisher")))
   }
 
   def createPublisher = isAuthenticated { username => implicit request =>
@@ -350,16 +360,18 @@ object Application extends Controller with Secured {
     )
   }
 
-  def publisherBrowse(filter: String, value: String, page: Int) = Action {
+  def publisherBrowse(filter: String, value: String, page: Int) = Action { implicit request =>
     filter match {
-      case "category" => publisherBrowseCategory(value, page)
-      case _ => NotFound("No such filter")
+      case "category" => Ok(views.html.publisher_browse(value, Publisher.inCategory(value, page), value, page, Publisher.categoryCount(value))) //publisherBrowseCategory(value, page)
+      case _ => NotFound(views.html.trouble("No such filter"))
     }
   }
 
+/*
   def publisherBrowseCategory(value: String, page: Int) = {
     Ok(views.html.publisher_browse(value, Publisher.inCategory(value, page), value, page, Publisher.categoryCount(value)))
   }
+*/
 
   val collForm = Form(
     mapping(
@@ -375,14 +387,15 @@ object Application extends Controller with Secured {
     )(Collection.apply)(Collection.unapply)
   )
 
-  def newCollection(id: Long) = Action {
+  def newCollection(id: Long) = isAuthenticated { username => implicit request =>
     Publisher.findById(id).map( pub => 
-      Ok(views.html.new_collection(pub, collForm))
-    ).getOrElse(NotFound("No such publisher"))
+      ownsPublisher(username, pub, Ok(views.html.new_collection(pub, collForm)))
+    ).getOrElse(NotFound(views.html.trouble("No such publisher")))
   }
 
-  def createCollection(id: Long) = Action { implicit request =>
+  def createCollection(id: Long) = isAuthenticated { username => implicit request =>
     val pub = Publisher.findById(id).get 
+    ownsPublisher(username, pub, 
       collForm.bindFromRequest.fold(
         errors => BadRequest(views.html.new_collection(pub, errors)),
         value => {
@@ -395,12 +408,24 @@ object Application extends Controller with Secured {
           Redirect(routes.Application.publisher(id))
         }
       )
+    )
     //).getOrElse(NotFound("No such publisher"))
   }
 
   def itemUrl(id: Long) = {
     routes.Application.item(id)
   }
+
+  def isAnalyst(username: String, result: Result)(implicit hubContext: HubContext): Result = {
+    val user = User.findByName(username).get
+    if (user.role.indexOf("analyst") >= 0 || user.role.indexOf("admin") >= 0) {
+      result
+    } else {
+      Unauthorized(views.html.trouble("You are not authorized"))
+    }
+  }
+
+  /* Scheme methods */
 
   val schemeForm = Form(
     mapping(
@@ -415,35 +440,35 @@ object Application extends Controller with Secured {
     )(Scheme.apply)(Scheme.unapply)
   )
 
-  def schemes = Action {
-    Ok(views.html.scheme_list(Scheme.all))
+  def schemes = isAuthenticated { username => implicit request =>
+    isAnalyst(username, Ok(views.html.scheme_list(Scheme.all)))
   }
 
-  def scheme(id: Long) = Action { implicit request => {
-    val userName = session.get("username").getOrElse("")
+  def scheme(id: Long) = Action { implicit request => 
     Scheme.findById(id).map( scheme => 
-      Ok(views.html.scheme(scheme, User.findByName(userName)))
-    ).getOrElse(NotFound("No such scheme"))
-    }
+      Ok(views.html.scheme(scheme))
+    ).getOrElse(NotFound(views.html.trouble("No such scheme")))
   }
 
-  def newScheme = Action {
-     Ok(views.html.new_scheme(schemeForm))
+  def newScheme = isAuthenticated { username => implicit request =>
+     isAnalyst(username, Ok(views.html.new_scheme(schemeForm)))
   }
 
-  def editScheme(id: Long) = Action {
+  def editScheme(id: Long) = isAuthenticated { username => implicit request =>
     Scheme.findById(id).map( scheme => 
-      Ok(views.html.scheme_edit(scheme))
-    ).getOrElse(NotFound("No such scheme"))
+      isAnalyst(username, Ok(views.html.scheme_edit(scheme)))
+    ).getOrElse(NotFound(views.html.trouble("No such scheme")))
   }
 
-  def createScheme = Action { implicit request =>
-   schemeForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.new_scheme(errors)),
-      value => {
-        Scheme.create(value.schemeId, value.gentype, value.category, value.description, value.link, value.logo)
-        Redirect(routes.Application.schemes)
-      }
+  def createScheme = isAuthenticated { username => implicit request =>
+    isAnalyst(username,
+      schemeForm.bindFromRequest.fold(
+        errors => BadRequest(views.html.new_scheme(errors)),
+        value => {
+          Scheme.create(value.schemeId, value.gentype, value.category, value.description, value.link, value.logo)
+          Redirect(routes.Application.schemes)
+        }
+      )
     )
   }
   // content types
@@ -456,27 +481,29 @@ object Application extends Controller with Secured {
     )(Ctype.apply)(Ctype.unapply)
   )
 
-  def ctypes = Action {
-    Ok(views.html.ctype_list(Ctype.all))
+  def ctypes = isAuthenticated { username => implicit request =>
+    isAnalyst(username, Ok(views.html.ctype_list(Ctype.all)))
   }
 
-  def ctype(id: Long) = Action {
-    Ctype.findById(id).map( t => 
-      Ok(views.html.ctype(t, ctSchemeForm))
-    ).getOrElse(NotFound("No such content type"))
+  def ctype(id: Long) = isAuthenticated { username => implicit request =>
+    Ctype.findById(id).map( ctype => 
+      isAnalyst(username, Ok(views.html.ctype(ctype, ctSchemeForm)))
+    ).getOrElse(NotFound(views.html.trouble("No such content type")))
   }
 
-  def newCtype = Action {
-     Ok(views.html.new_ctype(ctypeForm))
+  def newCtype = isAuthenticated { username => implicit request =>
+     isAnalyst(username, Ok(views.html.new_ctype(ctypeForm)))
   }
 
-  def createCtype = Action { implicit request =>
-    ctypeForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.new_ctype(errors)),
-      value => {
-        Ctype.create(value.ctypeId, value.description, value.logo)
-        Redirect(routes.Application.ctypes)
-      }
+  def createCtype = isAuthenticated { username => implicit request =>
+    isAnalyst(username,
+      ctypeForm.bindFromRequest.fold(
+        errors => BadRequest(views.html.new_ctype(errors)),
+        value => {
+          Ctype.create(value.ctypeId, value.description, value.logo)
+          Redirect(routes.Application.ctypes)
+        }
+      )
     )
   }
 
@@ -490,28 +517,28 @@ object Application extends Controller with Secured {
     )(PackageMap.apply)(PackageMap.unapply)
   )
 
-  def pkgmaps = Action {
-    Ok(views.html.pkgmap_list(PackageMap.all))
+  def pkgmaps = isAuthenticated { username => implicit request =>
+    isAnalyst(username, Ok(views.html.pkgmap_list(PackageMap.all)))
   }
 
-  def pkgmap(id: Long) = Action {
-    PackageMap.findById(id).map( m => 
-      Ok(views.html.pkgmap(m, pmSchemeForm))
-    ).getOrElse(NotFound("No such package map"))
+  def pkgmap(id: Long) = isAuthenticated { username => implicit request =>
+    PackageMap.findById(id).map( pmap => 
+      isAnalyst(username, Ok(views.html.pkgmap(pmap, pmSchemeForm)))
+    ).getOrElse(NotFound(views.html.trouble("No such package map")))
   }
 
-  def newPkgmap = Action {
-     Ok(views.html.new_pkgmap(pkgmapForm))
+  def newPkgmap = isAuthenticated { username => implicit request =>
+     isAnalyst(username, Ok(views.html.new_pkgmap(pkgmapForm)))
   }
 
-  def createPkgmap = Action { implicit request =>
-    pkgmapForm.bindFromRequest.fold(
+  def createPkgmap = isAuthenticated { username => implicit request =>
+    isAnalyst(username, pkgmapForm.bindFromRequest.fold(
       errors => BadRequest(views.html.new_pkgmap(errors)),
       value => {
         PackageMap.create(value.pkgmapId, value.description, value.swordUrl)
         Redirect(routes.Application.pkgmaps)
       }
-    )
+    ))
   }
 
   val pmSchemeForm = Form(
@@ -607,16 +634,16 @@ object Application extends Controller with Secured {
     )(Finder.apply)(Finder.unapply)
   )
 
-  def finders(schemeId: String) = Action {
+  def finders(schemeId: String) = Action { implicit request =>
     Scheme.findByName(schemeId).map( scheme =>
       Ok(views.html.finder_list(Finder.findByScheme(scheme.id)))
-    ).getOrElse(NotFound("Unknown scheme"))
+    ).getOrElse(NotFound(views.html.trouble("Unknown scheme")))
   }
 
-  def newFinder(schemeId: String) = Action {
+  def newFinder(schemeId: String) = isAuthenticated { username => implicit request =>
     Scheme.findByName(schemeId).map( scheme =>
-      Ok(views.html.new_finder(schemeId, finderForm))
-    ).getOrElse(NotFound("Unknown scheme"))
+      isAnalyst(username, Ok(views.html.new_finder(schemeId, finderForm)))
+    ).getOrElse(NotFound(views.html.trouble("Unknown scheme")))
   }
 
   def createFinder(schemeId: String) = Action { implicit request =>
@@ -628,15 +655,15 @@ object Application extends Controller with Secured {
           Redirect(routes.Application.finders(schemeId))
         }
       )
-    ).getOrElse(NotFound)
+    ).getOrElse(NotFound(views.html.trouble("Unknown scheme")))
   }
 
-  def deleteFinder(schemeId: String, id: Long) = Action {
+  def deleteFinder(schemeId: String, id: Long) = Action { implicit request =>
     Scheme.findByName(schemeId).map( scheme => {
       Finder.delete(id)
       Ok(views.html.finder_list(Finder.findByScheme(scheme.id)))
     }
-    ).getOrElse(NotFound("Unknown scheme"))
+    ).getOrElse(NotFound(views.html.trouble("Unknown scheme")))
   }
 
   val finderTestForm = Form(
@@ -648,7 +675,7 @@ object Application extends Controller with Secured {
     )
   )
 
-  def testFinder = Action {
+  def testFinder = Action { implicit request =>
     Ok(views.html.test_finder(finderTestForm, List[String]()))
   }
 
@@ -676,14 +703,13 @@ object Application extends Controller with Secured {
     )(Validator.apply)(Validator.unapply)
   )
 
-
-  def newValidator(schemeId: String) = Action {
+  def newValidator(schemeId: String) = isAuthenticated { username => implicit request =>
     Scheme.findByName(schemeId).map( scheme =>
-      Ok(views.html.new_validator(schemeId, validatorForm))
-    ).getOrElse(NotFound("Unknown scheme"))
+      isAnalyst(username, Ok(views.html.new_validator(schemeId, validatorForm)))
+    ).getOrElse(NotFound(views.html.trouble("Unknown scheme")))
   }
 
-  def createValidator(schemeId: String) = Action { implicit request =>
+  def createValidator(schemeId: String) = isAuthenticated { username => implicit request =>
     Scheme.findByName(schemeId).map( scheme =>
       validatorForm.bindFromRequest.fold(
         errors => BadRequest(views.html.new_validator(schemeId, errors)),
@@ -692,15 +718,15 @@ object Application extends Controller with Secured {
           Redirect(routes.Application.finders(schemeId))
         }
       )
-    ).getOrElse(NotFound)
+    ).getOrElse(NotFound(views.html.trouble("Unknown scheme")))
   }
 
-  def deleteValidator(schemeId: String, id: Long) = Action {
+  def deleteValidator(schemeId: String, id: Long) = isAuthenticated { username => implicit request =>
     Scheme.findByName(schemeId).map( scheme => {
       Validator.delete(id)
       Ok(views.html.finder_list(Finder.findByScheme(scheme.id)))
     }
-    ).getOrElse(NotFound("Unknown scheme"))
+    ).getOrElse(NotFound(views.html.trouble("Unknown scheme")))
   }
 
 /*
@@ -717,6 +743,8 @@ object Application extends Controller with Secured {
   }
   */
 
+  /* Subscriber methods */
+
   val subscriberForm = Form(
     mapping(
       "id" -> ignored(0L),
@@ -730,46 +758,53 @@ object Application extends Controller with Secured {
       "contact" -> nonEmptyText,
       "swordService" -> nonEmptyText,
       "terms" -> nonEmptyText,
-      "backFile" -> nonEmptyText,
+      "backFile" -> ignored("yes"),
       "created" -> ignored(new Date)
     )(Subscriber.apply)(Subscriber.unapply)
   )
 
-  def subscribers = Action { implicit request => {
-    val userName = session.get("username").getOrElse("")
-    Ok(views.html.subscriber_index(User.findByName(userName)))
+  private def ownsSubscriber(username: String, subId: Long, result: Result)(implicit request: Request[AnyContent]): Result = {
+    val user = User.findByName(username).get
+    if (user.hasSubscriber(subId)) {
+      result
+    } else {
+      Unauthorized(views.html.trouble("You are not authorized"))
     }
+  }
+
+  def subscribers = Action { implicit request => 
+    Ok(views.html.subscriber_index())
   }
 
   def subscriber(id: Long) = Action { implicit request => {
-    val userName = session.get("username").getOrElse("")
     Subscriber.findById(id).map( sub => 
-      Ok(views.html.subscriber(sub, User.findByName(userName)))
-    ).getOrElse(NotFound("No such subscriber"))
+      Ok(views.html.subscriber(sub))
+    ).getOrElse(NotFound(views.html.trouble("No such subscriber")))
     }
   }
 
-  def subscriberBrowse(filter: String, value: String, page: Int) = Action {
+  def subscriberBrowse(filter: String, value: String, page: Int) = Action { implicit request =>
     filter match {
-      case "category" => subscriberBrowseCategory(value, page)
-      case _ => NotFound("No such filter")
+      case "category" => Ok(views.html.subscriber_browse(value, Subscriber.inCategory(value, page), value, page, Subscriber.categoryCount(value))) //subscriberBrowseCategory(value, page)
+      case _ => NotFound(views.html.trouble("No such filter"))
     }
   }
 
+  /*
   def subscriberBrowseCategory(value: String, page: Int) = {
     Ok(views.html.subscriber_browse(value, Subscriber.inCategory(value, page), value, page, Subscriber.categoryCount(value)))
   }
+  */
 
-  def newSubscriber = Action {
+  def newSubscriber = mustAuthenticate { username => implicit request =>
     Ok(views.html.new_subscriber(subscriberForm))
   }
 
-   def editSubscriber(id: Long) = Action {
+  def editSubscriber(id: Long) = isAuthenticated { username => implicit request =>
     Subscriber.findById(id).map( sub => 
-      Ok(views.html.subscriber_edit(sub))
-    ).getOrElse(NotFound("No such subscriber"))
+      ownsSubscriber(username, sub.id, Ok(views.html.subscriber_edit(sub)))
+    ).getOrElse(NotFound(views.html.trouble("No such subscriber")))
   }
-
 
   def createSubscriber = isAuthenticated { username => implicit request =>
     subscriberForm.bindFromRequest.fold(
@@ -800,18 +835,18 @@ object Application extends Controller with Secured {
     )(Channel.apply)(Channel.unapply)
   )
 
-  def channel(id: Long) = Action {
+  def channel(id: Long) = isAuthenticated { username => implicit request =>
     Channel.findById(id).map( chan => 
       Ok(views.html.channel(chan))
-    ).getOrElse(NotFound("No such subscriber destination"))
+    ).getOrElse(NotFound(views.html.trouble("No such subscriber destination")))
   }
 
-  def newChannel(sid: Long) = Action {
-    Ok(views.html.new_channel(sid, channelForm))
+  def newChannel(sid: Long) = isAuthenticated { username => implicit request =>
+    ownsSubscriber(username, sid, Ok(views.html.new_channel(sid, channelForm)))
   }
 
-  def createChannel(sid: Long) = Action { implicit request =>
-    channelForm.bindFromRequest.fold(
+  def createChannel(sid: Long) = isAuthenticated { username => implicit request =>
+    ownsSubscriber(username, sid, channelForm.bindFromRequest.fold (
       errors => BadRequest(views.html.new_channel(sid, errors)),
       value => {
         val chan = Channel.make(value.protocol, value.mode, "outbound", value.description, value.userId, value.password, value.channelUrl)
@@ -819,21 +854,22 @@ object Application extends Controller with Secured {
         chan.setOwner("sub", sid)
         Redirect(routes.Application.subscriber(sid))
       }
+      )
     )
   }
 
-  def cancelSubscription(id: Long) = Action {
+  def cancelSubscription(id: Long) = isAuthenticated { username => implicit request =>
     Subscription.findById(id).map( sub => {
       val topic = Topic.findById(sub.topic_id).get
       Subscription.delete(id)
       // if topic is now an orphan (no items or other subscriptions), remove it
       if (topic.itemCount == 0 && topic.subscriptionCount == 0 && topic.transfers == 0) Topic.delete(topic.id)
       Redirect(routes.Application.channel(sub.channel_id))
-    }).getOrElse(NotFound("No such subscription"))   
+    }).getOrElse(NotFound(views.html.trouble("No such subscription")))
   }
 
   // Admin functions
-  def reindex(dtype: String) = Action {
+  def reindex(dtype: String) = isAuthenticated { username => implicit request =>
     indexer ! dtype
     Ok(views.html.index("reindex complete"))
   }

@@ -1,7 +1,11 @@
-@(pkgmaps: List[PackageMap])
+@*****************************************************************************
+ * Page to list insatalled Package Map                                       *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(pkgmaps: List[PackageMap])(implicit hubContext: HubContext)
 
 @main("Package Maps - TopicHub") {
-
      <h2>Number of package maps: @pkgmaps.size</h2>
      <ul>
        @pkgmaps.map { pmap =>

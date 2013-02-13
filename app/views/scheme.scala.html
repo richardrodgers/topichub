@@ -4,20 +4,29 @@
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(scheme: Scheme, user: Option[User])
+@(scheme: Scheme)(implicit hubContext: HubContext)
 @main("Scheme - TopicHub") {
   <div class="hero-unit">
     <h3>~ Scheme ~</h3>
     <h2>@scheme.schemeId</h2>
-    <p><a href="@scheme.link" target="_blank">@scheme.description</a></p>
-    <p>@HubUtils.pluralize(scheme.topicCount, "topic") <a href="@routes.Application.topicBrowse(scheme.id)">Browse</a></p>
+    @if(scheme.link.isEmpty || scheme.link.get == "none") {
+      <p>@scheme.description</p>
+    } else {
+      <p><a href="@scheme.link" target="_blank">@scheme.description</a></p>
+    }
+    <p>@HubUtils.pluralize(scheme.topicCount, "topic")
+    @if(scheme.topicCount > 0) {
+      <a href="@routes.Application.topicBrowse(scheme.id)">Browse</a></p>
+    } else {
+      </p>
+    }
     @if(! scheme.validator.isEmpty) {
        <p>Check Topic: <form action="@routes.Application.topicValidate(scheme.id)" method="POST">
           <input type="text" name="topic">
           <input type="submit" value="Check">
        </p>
     }
-    @if(! user.isEmpty) {
+    @if(! hubContext.user.isEmpty) {
       <a rel="tooltip" title="manage scheme" href="@routes.Application.editScheme(scheme.id)" class="btn btn-primary btn-large pull-right">Manage &raquo;</a>
     }
   </div>

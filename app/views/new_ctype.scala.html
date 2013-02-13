@@ -1,12 +1,14 @@
-@(ctypeForm: Form[Ctype])
+@*****************************************************************************
+ * Page with form to create new Content Type                                 *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(ctypeForm: Form[Ctype])(implicit hubContext: HubContext)
 
 @import helper._
-
 @main("Content Types  - TopicHub") {
-
      <h2>Add a new content type</h2> 
-    @form(routes.Application.createCtype) {
-        
+    @form(routes.Application.createCtype) {      
         @inputText(ctypeForm("ctypeId"))
         @inputText(ctypeForm("description")) 
         @inputText(ctypeForm("logo")) 

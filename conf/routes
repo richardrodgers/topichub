@@ -124,6 +124,7 @@ PUT     /cmodel                     controllers.Application.setCmodel
 
 # Administrative services
 GET     /reindex/:dtype             controllers.Application.reindex(dtype: String)
+GET     /workbench                  controllers.Application.workbench
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -136,6 +136,19 @@ object Topic {
     }   
   }
 
+  def since(earliest: Date, max: Int): List[Topic] = {
+      DB.withConnection { implicit c =>
+      SQL(
+        """
+          select * from topic
+          where created > {earliest}
+          order by created
+          limit {max}
+        """
+      ).on('earliest -> earliest, 'max -> max).as(topic *)
+    }   
+  }
+
   def findById(id: Long): Option[Topic] = {
    DB.withConnection { implicit c =>
       SQL("select * from topic where id = {id}").on('id -> id).as(topic.singleOpt)
@@ -157,6 +170,11 @@ object Topic {
 
   def make(scheme_id: Long, topicId: String, name: String): Topic = {
     findById(create(scheme_id, topicId, name).get).get
+  }
+
+  def forQualifiedId(qId: String): Option[Topic] = {
+    val parts = qId.split(":")
+    forSchemeAndId(parts(0), parts(1))
   }
 
   def forSchemeAndId(schemeId: String, topicId: String): Option[Topic] = {

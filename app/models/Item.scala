@@ -122,22 +122,34 @@ object Item {
     }
   }
 
-  def findByRange(fromO: Option[String], tillO: Option[String]): List[Item] = {
-    val from: String = null
-    val till: String = null
-    DB.withConnection { implicit c => {
-      var hits: SimpleSql[Row] = null
-      if (from != null && till != null) {
-        hits = SQL("select * from item where created >= {from} and created <= {till}").on('from -> from, 'till -> till)
-      } else if (from != null) {
-        hits = SQL("select * from item where created >= {from}").on('from -> from)
-      } else if (till != null) {
-        hits = SQL("select * from itme where created <= {till}").on('till -> till)
-      } else {
-        hits = SQL("select * from item")
-      }
-      hits.as(item *)
-    }}
+  def findByRange(earliest: Date, latest: Date, max: Int): List[Item] = {
+    DB.withConnection { implicit c => 
+      SQL(
+        """
+          select * from item
+          where created >= {earliest}
+          and created <= {latest}
+          order by created
+          limit {max}
+        """
+      ).on('earliest -> earliest, 'latest -> latest, 'max -> max).as(item *)
+     }
+  }
+
+  def findByRangeTopic(earliest: Date, latest: Date, topicId: Long, max: Int): List[Item] = {
+    DB.withConnection { implicit c => 
+      SQL(
+        """
+          select item.* from item, itemtopic
+          where item.created >= {earliest}
+          and item.created <= {latest}
+          and itemtopic.item_id = item.id
+          and itemtopic.topic_id = {topicId}
+          order by item.created
+          limit {max}
+        """
+      ).on('earliest -> earliest, 'latest -> latest, 'topicId -> topicId, 'max -> max).as(item *)
+     }
   }
 
   def findById(id: Long): Option[Item] = {

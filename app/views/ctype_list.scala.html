@@ -1,12 +1,16 @@
-@(ctypes: List[Ctype])
+@*****************************************************************************
+ * Page to display list of defined content types                             *
+ * Copyright 2012 MIT Libraries                                              *
+ * @author richardrodgers                                                    *
+ *****************************************************************************@
+@(ctypes: List[Ctype])(implicit hubContext: HubContext)
 
 @main("Content Types - TopicHub") {
-
-     <h2>Number of content types: @ctypes.size</h2>
-     <ul>
-       @ctypes.map { ctype =>
-         <li>@ctype.ctypeId <a href="@routes.Application.ctype(ctype.id)">@ctype.description</a></li>
-       }
-     </ul>
-     <p><a class="btn btn-primary btn-large" href="@routes.Application.newCtype">New Content Type</a></p>
+   <h2>Number of content types: @ctypes.size</h2>
+   <ul>
+     @ctypes.map { ctype =>
+       <li>@ctype.ctypeId <a href="@routes.Application.ctype(ctype.id)">@ctype.description</a></li>
+     }
+   </ul>
+   <p><a class="btn btn-primary btn-large" href="@routes.Application.newCtype">New Content Type</a></p>
 }

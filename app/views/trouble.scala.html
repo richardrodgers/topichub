@@ -1,15 +1,13 @@
 @*****************************************************************************
- * Page to display list of installed finders                                 *
+ * Page served for non-success Http results (404, 500 etc)                   *
  * Copyright 2012 MIT Libraries                                              *
  * @author richardrodgers                                                    *
  *****************************************************************************@
-@(finders: List[Finder])(implicit hubContext: HubContext)
-
-@main("Finders - TopicHub") {
-   <h2>Number of finders: @finders.size</h2>
-   <ul>
-     @finders.map { finder =>
-       <li>@finder.description</li>
-     }
-   </ul>
+@(msg: String)(implicit hubContext: HubContext)
+@main("Error - TopicHub") {
+  <div class="hero-unit">
+    <h2>We are very sorry, but we were unable to complete your request</h2>
+    <br/>
+    <h3>Reason: @msg</h3>
+  </div>
 }
